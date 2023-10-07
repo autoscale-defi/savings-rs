@@ -24,6 +24,16 @@ pub trait StorageModule: ContractBase {
     #[view(getAssetTokenIdentifier)]
     fn asset_token_identifier(&self) -> SingleValueMapper<Self::Api, TokenIdentifier<Self::Api>>;
 
+    /// This storage is used as a cache to avoid useless contract call to the farm.
+    /// Will be populate and clear when pools are added by admins.
+    #[storage_mapper("share_token_identifier_for_farm")]
+    #[view(getShareTokenIdentifierForFarm)]
+    fn share_token_identifier_for_farm(&self, farm_address: &ManagedAddress<Self::Api>) -> SingleValueMapper<Self::Api, TokenIdentifier<Self::Api>>;
+
+    #[storage_mapper("current_position_for_farm")]
+    #[view(getCurrentPositionForFarm)]
+    fn current_position_for_farm(&self, farm_address: &ManagedAddress<Self::Api>) -> SingleValueMapper<Self::Api, EsdtTokenPayment<Self::Api>>;
+
     #[storage_mapper("pools")]
     #[view(getPools)]
     fn pools(&self) -> MapMapper<Self::Api, ManagedAddress<Self::Api>, PoolInfos<Self::Api>>;
@@ -39,6 +49,13 @@ pub trait StorageModule: ContractBase {
     #[storage_mapper("zap_exchange_for_in_token")]
     #[view(getZapExchangeForInToken)]
     fn zap_exchange_for_in_token(&self, token_id: &TokenIdentifier<Self::Api>) -> SingleValueMapper<Self::Api, ZapExchangeInfos<Self::Api>>;
+
+    /// This storage is used as a cache to avoid to handle rewards in the deposit endpoint.
+    /// Doing so would lead to a potential out of gas.
+    /// In the claim_rewards endpoint, we should append those waiting rewards to the final result.
+    #[storage_mapper("waiting_rewards")]
+    #[view(getWaitingRewards)]
+    fn waiting_rewards(&self) -> VecMapper<Self::Api, EsdtTokenPayment<Self::Api>>;
 
     fn get_zap_exchange_for_in_token_or_default(
         &self,

@@ -17,6 +17,13 @@ mod proxy {
             &self,
             farm_address: ManagedAddress<Self::Api>
         ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>;
+
+        #[payable("*")]
+        #[endpoint(claimFarmRewardsForward)]
+        fn claim_farm_rewards_forward(
+            &self,
+            farm_address: ManagedAddress<Self::Api>
+        ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>;
     }
 }
 
@@ -64,6 +71,17 @@ pub trait HolderProxyModule: ContractBase
             share_token_payment,
             other_payments,
         }
+    }
+
+    fn claim_farm_rewards(
+        &self,
+        current_position_payment: EsdtTokenPayment<Self::Api>,
+        farm_address: &ManagedAddress<Self::Api>
+    ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
+        self.holder_proxy(self.holder_address().get())
+            .claim_farm_rewards_forward(farm_address)
+            .with_esdt_transfer(current_position_payment)
+            .execute_on_dest_context()
     }
 
     #[proxy]

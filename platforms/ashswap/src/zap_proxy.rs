@@ -34,6 +34,16 @@ mod proxy {
             pool_address: &ManagedAddress<Self::Api>,
             opt_min_amount: &Option<BigUint<Self::Api>>,
         ) -> ZapInResultInfos<Self::Api>;
+
+        #[endpoint(swap)]
+        #[payable("*")]
+        fn swap(
+            &self,
+            start_exchange: &ZapExchangeInfos<Self::Api>,
+            dest_token: &TokenIdentifier<Self::Api>,
+            opt_min_amount: &Option<BigUint<Self::Api>>,
+            should_unwrap_egld: bool
+        ) -> EgldOrEsdtTokenPayment<Self::Api>;
     }
 }
 
@@ -41,18 +51,38 @@ mod proxy {
 pub trait ZapProxyModule: ContractBase
     + storage::StorageModule
 {
+    fn swap_payment(
+        &self,
+        in_payment: EsdtTokenPayment<Self::Api>,
+        out_token: &TokenIdentifier<Self::Api>
+    ) -> EsdtTokenPayment<Self::Api> {
+        let start_exchange = self.get_zap_start_exchange_for_token_or_default(
+            &in_payment.token_identifier
+        );
+
+        self.zap_proxy(self.zap_address().get())
+            .swap(
+                start_exchange,
+                out_token,
+                &None,
+                false
+            )
+            .execute_on_dest_context::<EgldOrEsdtTokenPayment<Self::Api>>()
+            .unwrap_esdt()
+    }
+
     fn zap_in_payment(
         &self,
         pool_address: &ManagedAddress<Self::Api>,
         in_payment: EsdtTokenPayment<Self::Api>
     ) -> EsdtTokenPayment<Self::Api> {
-        let zap_exchange = self.get_zap_exchange_for_in_token_or_default(
-            &in_payment.token_identifier
+        let start_exchange = self.get_zap_start_exchange_for_token_or_default(
+            &self.lp_token_identifier_for_pool(&pool_address).get()
         );
 
         let result: ZapInResultInfos<Self::Api> = self.zap_proxy(self.zap_address().get())
             .zap_in(
-                &zap_exchange,
+                &start_exchange,
                 pool_address,
                 &None
             )

@@ -79,4 +79,83 @@ pub trait AshSwapPlatformContract: ContractBase
             }
         }
     }
+
+    #[endpoint(claimRewards)]
+    fn claim_rewards_endpoint(&self) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
+        let caller = self.blockchain().get_caller();
+
+        require!(
+            caller == self.controller_address().get(),
+            "Only the controller can call this endpoint"
+        );
+
+        self.claim_all_rewards(&caller)
+    }
+
+    fn claim_all_rewards(&self, receiver: &ManagedAddress<Self::Api>) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
+        let pools_mapper = self.pools();
+        let pools = pools_mapper.values();
+
+        let mut all_rewards: ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> = ManagedVec::new();
+        for waiting_rewards in self.waiting_rewards().iter() {
+            all_rewards.push(waiting_rewards)
+        }
+
+        for pool in pools {
+            let current_farm_position_mapper = self.current_position_for_farm(&pool.farm_address);
+            if current_farm_position_mapper.is_empty() {
+                continue
+            }
+
+            let rewards = self.claim_farm_rewards(
+                current_farm_position_mapper.get(),
+                &pool.farm_address
+            );
+
+            for reward in rewards.iter() {
+                if reward.amount > 0 {
+                    all_rewards.push(reward)
+                }
+            }
+        }
+
+        // Let's swap rewards to the asset token
+        let mut total_assets_payment = EsdtTokenPayment::new(
+            self.asset_token_identifier().get(),
+            0,
+            BigUint::zero()
+        );
+        let mut results = ManagedVec::new();
+        for reward in all_rewards.iter() {
+            if reward.token_identifier == total_assets_payment.token_identifier {
+                total_assets_payment.amount += &reward.amount;
+                continue
+            }
+
+            if self.swappable_tokens().contains(&reward.token_identifier) {
+                total_assets_payment.amount += self.swap_payment(
+                    reward,
+                    &total_assets_payment.token_identifier
+                ).amount;
+            } else {
+                results.push(reward)
+            }
+        }
+        results.push(total_assets_payment);
+
+        for result in results.iter() {
+            if result.amount > 0 {
+                self.send()
+                    .direct_esdt(
+                        receiver,
+                        &result.token_identifier,
+                        result.token_nonce,
+                        &result.amount
+                    );
+            }
+        }
+
+        results
+    }
+
 }

@@ -24,6 +24,12 @@ pub trait StorageModule: ContractBase {
     #[view(getAssetTokenIdentifier)]
     fn asset_token_identifier(&self) -> SingleValueMapper<Self::Api, TokenIdentifier<Self::Api>>;
 
+    /// This storage is used as a cache to avoid useless contract call to the pool.
+    /// Will be populate and clear when pools are added by admins.
+    #[storage_mapper("lp_token_identifier_for_pool")]
+    #[view(getShareTokenIdentifierForPool)]
+    fn lp_token_identifier_for_pool(&self, farm_address: &ManagedAddress<Self::Api>) -> SingleValueMapper<Self::Api, TokenIdentifier<Self::Api>>;
+
     /// This storage is used as a cache to avoid useless contract call to the farm.
     /// Will be populate and clear when pools are added by admins.
     #[storage_mapper("share_token_identifier_for_farm")]
@@ -46,9 +52,11 @@ pub trait StorageModule: ContractBase {
     #[view(getZapAddress)]
     fn zap_address(&self) -> SingleValueMapper<Self::Api, ManagedAddress<Self::Api>>;
 
-    #[storage_mapper("zap_exchange_for_in_token")]
-    #[view(getZapExchangeForInToken)]
-    fn zap_exchange_for_in_token(&self, token_id: &TokenIdentifier<Self::Api>) -> SingleValueMapper<Self::Api, ZapExchangeInfos<Self::Api>>;
+    /// Gives more flexibility to guide the zap to find a valid route for USDC -> token_id.
+    /// Default value is provided in the [`get_zap_in_start_exchange_for_lp_token_or_default`] function.
+    #[storage_mapper("zap_start_exchange_for_token")]
+    #[view(getZapStartExchangeForToken)]
+    fn zap_start_exchange_for_token(&self, token_id: &TokenIdentifier<Self::Api>) -> SingleValueMapper<Self::Api, ZapExchangeInfos<Self::Api>>;
 
     /// This storage is used as a cache to avoid to handle rewards in the deposit endpoint.
     /// Doing so would lead to a potential out of gas.
@@ -57,11 +65,17 @@ pub trait StorageModule: ContractBase {
     #[view(getWaitingRewards)]
     fn waiting_rewards(&self) -> VecMapper<Self::Api, EsdtTokenPayment<Self::Api>>;
 
-    fn get_zap_exchange_for_in_token_or_default(
+    /// Stores tokens that are swappable to the asset token.
+    /// This storage is useful to avoid sending non-swappable tokens to the zap.
+    /// Doing so would make the transaction to fail.
+    #[storage_mapper("swappable_tokens")]
+    fn swappable_tokens(&self) -> WhitelistMapper<Self::Api, TokenIdentifier<Self::Api>>;
+
+    fn get_zap_start_exchange_for_token_or_default(
         &self,
         token_id: &TokenIdentifier<Self::Api>
     ) -> ZapExchangeInfos<Self::Api> {
-        let mapper = self.zap_exchange_for_in_token(token_id);
+        let mapper = self.zap_start_exchange_for_token(token_id);
 
         if mapper.is_empty() {
             return ZapExchangeInfos {

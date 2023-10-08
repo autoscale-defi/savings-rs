@@ -3,13 +3,30 @@
 mod zap_proxy;
 mod storage;
 mod holder_proxy;
+mod admin;
+mod pool_proxy;
+mod farm_proxy;
 
 multiversx_sc::imports!();
 
 #[multiversx_sc::contract]
 pub trait AshSwapPlatformContract: ContractBase
-    + storage::StorageModule + zap_proxy::ZapProxyModule + holder_proxy::HolderProxyModule
+    + storage::StorageModule + admin::AdminModule + zap_proxy::ZapProxyModule + holder_proxy::HolderProxyModule + pool_proxy::PoolProxyModule + farm_proxy::FarmProxyModule
 {
+    #[init]
+    fn init(
+        &self,
+        controller_address: &ManagedAddress<Self::Api>,
+        holder_address: &ManagedAddress<Self::Api>,
+        zap_address: &ManagedAddress<Self::Api>,
+        asset_token_identifier: &TokenIdentifier<Self::Api>,
+    ) {
+        self.controller_address().set_if_empty(controller_address);
+        self.holder_address().set_if_empty(holder_address);
+        self.zap_address().set_if_empty(zap_address);
+        self.asset_token_identifier().set_if_empty(asset_token_identifier);
+    }
+
     #[endpoint]
     #[payable("*")]
     fn deposit(&self) {
@@ -34,14 +51,17 @@ pub trait AshSwapPlatformContract: ContractBase
         let mut left_payment_amount = payment.amount.clone();
         let mut used_weight = 0u64; // no .len() on pools, this is an alternative way to know if the pool in the for loop is the last one
 
+        let mut test = 0u64;
         for pool in pools {
             let payment_amount = if used_weight + pool.weight == total_weight { // this is the last pool, let's use the whole unused payment
                 core::mem::take(&mut left_payment_amount)
             } else {
-                &payment.amount * &BigUint::from(pool.weight) / &BigUint::from(total_weight)
+                let amount = &payment.amount * &BigUint::from(pool.weight) / &BigUint::from(total_weight);
+                left_payment_amount -= &amount;
+
+                amount
             };
 
-            left_payment_amount -= &payment_amount;
             used_weight += pool.weight;
 
             let asset_payment = EsdtTokenPayment::new(
@@ -54,6 +74,7 @@ pub trait AshSwapPlatformContract: ContractBase
                 &pool.pool_address,
                 asset_payment
             );
+
 
             require!(
                 new_lp_payment.amount > 0,
@@ -77,6 +98,8 @@ pub trait AshSwapPlatformContract: ContractBase
             for other_payment in enter_farms_payments.other_payments.iter() {
                 self.waiting_rewards().push(&other_payment);
             }
+
+            test += 1;
         }
     }
 

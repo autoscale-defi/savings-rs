@@ -87,7 +87,7 @@ pub trait StorageModule: ContractBase {
         mapper.get()
     }
 
-    fn add_pool(&self, pool: PoolInfos<Self::Api>) {
+    fn add_pool_in_storage(&self, pool: PoolInfos<Self::Api>) {
         self.pools_total_weight().update(|total| *total += pool.weight);
 
         self.pools()
@@ -97,7 +97,7 @@ pub trait StorageModule: ContractBase {
             );
     }
 
-    fn remove_pool(&self, pool_address: &ManagedAddress<Self::Api>) {
+    fn remove_pool_from_storage(&self, pool_address: &ManagedAddress<Self::Api>) {
         let Some(removed_pool) = self.pools().remove(pool_address) else {
             sc_panic!("No pool for given address")
         };

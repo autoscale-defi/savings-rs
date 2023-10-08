@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "platforms/ashswap"
+    "platforms/ashswap",
+    "platforms/ashswap/meta"
 ]

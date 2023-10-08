@@ -1817,6 +1817,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "saving-rs-meta"
+version = "0.0.0"
+dependencies = [
+ "multiversx-sc-meta",
+ "saving-rs",
+]
+
+[[package]]
 name = "schannel"
 version = "0.1.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"

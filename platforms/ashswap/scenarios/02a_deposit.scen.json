@@ -1,0 +1,95 @@
+{
+    "name": "saving-rs",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "01a_configure_pools.scen.json"
+        },
+        {
+            "step": "scCall",
+            "txId": "controller deposits USDC",
+            "tx": {
+                "from": "address:controller_contract",
+                "to": "sc:saving",
+                "function": "deposit",
+                "arguments": [],
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:USDC-abcdef",
+                        "value": "1,000,000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/saving-rs.wasm",
+                    "esdt": {
+                        "str:USDCTBFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "132851"
+                                }
+                            ]
+                        },
+                        "str:BUSDEGLDFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "115465197543967350"
+                                }
+                            ]
+                        }
+                    },
+                    "storage": {
+                        "str:controller_address": "address:controller_contract",
+                        "str:holder_address": "sc:ats_ash_holder",
+                        "str:zap_address": "sc:ats_router",
+                        "str:asset_token_identifier": "str:USDC-abcdef",
+                        "str:pools.info": "0x00000002000000010000000200000002",
+                        "str:pools.node_id|sc:busd_egld_ashswap_pool": "1",
+                        "str:pools.node_id|sc:usdc_usdt_busd_ashswap_pool": "2",
+                        "str:pools.node_links|u32:1": "u32:0|u32:2",
+                        "str:pools.node_links|u32:2": "u32:1|u32:0",
+                        "str:pools.value|u32:1": "sc:busd_egld_ashswap_pool",
+                        "str:pools.value|u32:2": "sc:usdc_usdt_busd_ashswap_pool",
+                        "str:pools.mapped|sc:usdc_usdt_busd_ashswap_pool": "sc:usdc_usdt_busd_ashswap_pool|sc:ashswap_usdc_t_b_farm|u64:1",
+                        "str:pools.mapped|sc:busd_egld_ashswap_pool": "sc:busd_egld_ashswap_pool|sc:ashswap_busd_egld_farm|u64:2",
+                        "str:lp_token_identifier_for_pool|sc:busd_egld_ashswap_pool": "str:BUSDEGLDLP-abcdef",
+                        "str:lp_token_identifier_for_pool|sc:usdc_usdt_busd_ashswap_pool": "str:USDCTBLP-abcdef",
+                        "str:share_token_identifier_for_farm|sc:ashswap_busd_egld_farm": "str:BUSDEGLDFA-abcdef",
+                        "str:share_token_identifier_for_farm|sc:ashswap_usdc_t_b_farm": "str:USDCTBFA-abcdef",
+                        "str:pools_total_weight": "3",
+                        "str:zap_start_exchange_for_token|nested:str:BUSDEGLDLP-abcdef": "u8:1|u8:1|nested:str:BUSD-abcdef",
+                        "str:current_position_for_farm|sc:ashswap_busd_egld_farm": {
+                            "00-token_identifier": "nested:str:BUSDEGLDFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:115465197543967350"
+                        },
+                        "str:current_position_for_farm|sc:ashswap_usdc_t_b_farm": {
+                            "00-token_identifier": "nested:str:USDCTBFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:132851"
+                        }
+                    }
+                },
+                "+": "*"
+            }
+        }
+
+    ]
+}

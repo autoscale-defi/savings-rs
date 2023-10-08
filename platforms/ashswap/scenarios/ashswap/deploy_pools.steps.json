@@ -1,0 +1,685 @@
+{
+    "name": "deploy contract",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "sc:ashswap_pool_template": {
+                    "code": "file:pool_v1.wasm"
+                },
+                "sc:ashswap_pool_v2_template": {
+                    "code": "file:pool_v2.wasm"
+                }
+            },
+            "newAddresses": [
+                {
+                    "creatorAddress": "address:ashswap_owner",
+                    "creatorNonce": "0",
+                    "newAddress": "sc:ashswap_voting_escrow"
+                },
+                {
+                    "creatorAddress": "address:ashswap_owner",
+                    "creatorNonce": "1",
+                    "newAddress": "sc:ashswap_fee_distributor"
+                },
+                {
+                    "creatorAddress": "address:ashswap_owner",
+                    "creatorNonce": "2",
+                    "newAddress": "sc:ashswap_router"
+                },
+                {
+                    "creatorAddress": "sc:ashswap_router",
+                    "creatorNonce": "0",
+                    "newAddress": "sc:busd_egld_ashswap_pool"
+                },
+                {
+                    "creatorAddress": "sc:ashswap_router",
+                    "creatorNonce": "1",
+                    "newAddress": "sc:usdt_ash_ashswap_pool"
+                },
+                {
+                    "creatorAddress": "sc:ashswap_router",
+                    "creatorNonce": "2",
+                    "newAddress": "sc:usdc_usdt_busd_ashswap_pool"
+                },
+                {
+                    "creatorAddress": "sc:ashswap_router",
+                    "creatorNonce": "3",
+                    "newAddress": "sc:busd_htm_ashswap_pool"
+                }
+            ],
+            "currentBlockInfo": {
+                "blockTimestamp": "0",
+                "blockNonce": "0",
+                "blockRound": "0",
+                "blockEpoch": "0"
+            }
+        },
+        {
+            "step": "scDeploy",
+            "txId": "deploy-voting_escrow",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "contractCode": "file:voting_escrow.wasm",
+                "arguments": [
+                    "str:ASH-abcdef"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scDeploy",
+            "txId": "deploy-fee_distributor",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "contractCode": "file:fee_distributor.wasm",
+                "arguments": [
+                    "sc:voting_escrow",
+                    "1649894400",
+                    "address:ashswap_owner"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scDeploy",
+            "txId": "deploy-router",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "contractCode": "file:pool_router.wasm",
+                "arguments": [
+                    "sc:ashswap_fee_collector",
+                    "address:ashswap_owner"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "set pool v1 template address",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "setPoolTemplateAddress",
+                "arguments": [
+                    "0",
+                    "sc:ashswap_pool_template"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "set pool v2 template address",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "setPoolTemplateAddress",
+                "arguments": [
+                    "3",
+                    "sc:ashswap_pool_v2_template"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "deploy busd-egld pool",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "createPoolV2",
+                "arguments": [
+                    "str:BUSDEGLDLP-abcdef",
+                    "str:BUSDEGLDLP-abcdef",
+                    "3",
+                    "1,000,000",
+                    "1,000,000,000,000,000",
+                    "26000000",
+                    "45000000",
+                    "2000000000000",
+                    "230000000000000",
+                    "146000000000000",
+                    "5000000000",
+                    "600",
+                    "500000000000000000",
+                    {
+                        "00_token": "nested:str:BUSD-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    },
+                    {
+                        "00_token": "nested:str:WEGLD-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "deploy usdt-ash pool",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "createPoolV2",
+                "arguments": [
+                    "str:USDTASHLP-abcdef",
+                    "str:USDTASHLP-abcdef",
+                    "3",
+                    "1,000,000",
+                    "1,000,000,000,000,000",
+                    "26000000",
+                    "45000000",
+                    "2000000000000",
+                    "230000000000000",
+                    "146000000000000",
+                    "5000000000",
+                    "600",
+                    "500000000000000000",
+                    {
+                        "00_token": "nested:str:USDT-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    },
+                    {
+                        "00_token": "nested:str:ASH-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "deploy usdc-usdt-busd pool",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "createPool",
+                "arguments": [
+                    "str:USDCTBLP-abcdef",
+                    "str:USDCTBLP-abcdef",
+                    "0",
+                    "0",
+                    "100",
+                    "100",
+                    "0",
+                    {
+                        "00_token": "nested:str:USDC-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000_000_000"
+                    },
+                    {
+                        "00_token": "nested:str:USDT-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000_000_000"
+                    },
+                    {
+                        "00_token": "nested:str:BUSD-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000_000_000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "deploy busd-htm pool",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_router",
+                "function": "createPoolV2",
+                "arguments": [
+                    "str:BUSDHTMLP-abcdef",
+                    "str:BUSDHTMLP-abcdef",
+                    "3",
+                    "1,000,000",
+                    "1,000,000,000,000,000",
+                    "26000000",
+                    "45000000",
+                    "2000000000000",
+                    "230000000000000",
+                    "146000000000000",
+                    "5000000000",
+                    "600",
+                    "500000000000000000",
+                    {
+                        "00_token": "nested:str:BUSD-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    },
+                    {
+                        "00_token": "nested:str:HTM-abcdef",
+                        "01_rate": "biguint:1_000_000_000_000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:busd_egld_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "sc:ashswap_router",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "2",
+                        "str:tokens.item|u32:1": "str:BUSD-abcdef",
+                        "str:tokens.item|u32:2": "str:WEGLD-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000"
+                    },
+                    "code": "*"
+                },
+                "sc:usdt_ash_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "sc:ashswap_router",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "2",
+                        "str:tokens.item|u32:1": "str:USDT-abcdef",
+                        "str:tokens.item|u32:2": "str:ASH-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000"
+                    },
+                    "code": "*"
+                },
+                "sc:usdc_usdt_busd_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:tokens.value|u32:1": "str:USDC-abcdef",
+                        "str:tokens.value|u32:2": "str:USDT-abcdef",
+                        "str:tokens.value|u32:3": "str:BUSD-abcdef",
+                        "str:tokens.node_links|u32:1": "u64:2",
+                        "str:tokens.node_links|u32:2": "0x0000000100000003",
+                        "str:tokens.node_links|u32:3": "0x0000000200000000",
+                        "str:tokens.node_id|nested:str:USDC-abcdef": "1",
+                        "str:tokens.node_id|nested:str:USDT-abcdef": "2",
+                        "str:tokens.node_id|nested:str:BUSD-abcdef": "3",
+                        "str:tokens.mapped|nested:str:USDC-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.mapped|nested:str:USDT-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.mapped|nested:str:BUSD-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.info": "0x00000003000000010000000300000003",
+                        "str:state": "2",
+                        "str:precision": "1000000000000000000",
+                        "str:initial_amp_factor": "100",
+                        "str:future_amp_factor": "100",
+                        "str:swap_fee_percent": "100"
+                    },
+                    "code": "*"
+                },
+                "sc:busd_htm_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "sc:ashswap_router",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "2",
+                        "str:tokens.item|u32:1": "str:BUSD-abcdef",
+                        "str:tokens.item|u32:2": "str:HTM-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000"
+                    },
+                    "code": "*"
+                },
+                "sc:ashswap_router": {
+                    "owner": "address:ashswap_owner",
+                    "nonce": "4",
+                    "balance": "0",
+                    "storage": {
+                        "str:emergency_admin": "address:ashswap_owner",
+                        "str:ownership_admin": "address:ashswap_owner",
+                        "str:fee_distributor_address": "sc:ashswap_fee_collector",
+                        "str:pool_template_address.info": "0x00000002000000010000000200000002",
+                        "str:pool_template_address.node_links|u32:1": "u32:0|u32:2",
+                        "str:pool_template_address.node_links|u32:2": "u32:1|u32:0",
+                        "str:pool_template_address.node_id|u8:0": "1",
+                        "str:pool_template_address.node_id|u8:3": "2",
+                        "str:pool_template_address.value|u32:2": "3",
+                        "str:pool_template_address.mapped|u8:0": "sc:ashswap_pool_template",
+                        "str:pool_template_address.mapped|u8:3": "sc:ashswap_pool_v2_template",
+                        "0x43425f434c4f535552456465706c6f7920627573642d68746d20706f6f6c2e2e2e2e2e2e2e2e2e2e2e2e": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b00000004000000200000000000000000627573645f68746d5f617368737761705f706f6f6c5f5f5f0000000000000001030000001d0000000b425553442d6162636465660000000a48544d2d616263646566",
+                        "0x43425f434c4f535552456465706c6f7920757364742d61736820706f6f6c2e2e2e2e2e2e2e2e2e2e2e2e": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b00000004000000200000000000000000757364745f6173685f617368737761705f706f6f6c5f5f5f0000000000000001030000001d0000000b555344542d6162636465660000000a4153482d616263646566",
+                        "0x43425f434c4f535552456465706c6f7920627573642d65676c6420706f6f6c2e2e2e2e2e2e2e2e2e2e2e": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b00000004000000200000000000000000627573645f65676c645f617368737761705f706f6f6c5f5f0000000000000001030000001f0000000b425553442d6162636465660000000c5745474c442d616263646566",
+                        "0x43425f434c4f535552456465706c6f7920757364632d757364742d6275736420706f6f6c2e2e2e2e2e2e": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b00000004000000200000000000000000757364635f757364745f627573645f617368737761705f7000000000000000000000002d0000000b555344432d6162636465660000000b555344542d6162636465660000000b425553442d616263646566"
+                    },
+                    "code": "*"
+                },
+                "+": "*"
+            }
+        },
+        {
+            "step": "setState",
+            "accounts": {
+                "sc:busd_egld_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "sc:ashswap_router",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "1",
+                        "str:tokens.item|u32:1": "str:BUSD-abcdef",
+                        "str:tokens.item|u32:2": "str:WEGLD-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000",
+                        "str:lpTokenIdentifier": "str:BUSDEGLDLP-abcdef"
+                    },
+                    "esdt": {
+                        "str:BUSDEGLDLP-abcdef": {
+                            "roles": [
+                                "ESDTRoleLocalMint",
+                                "ESDTRoleLocalBurn"
+                            ]
+                        }
+                    },
+                    "code": "file:pool_v2.wasm"
+                },
+                "sc:usdt_ash_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "address:ashswap_owner",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "1",
+                        "str:tokens.item|u32:1": "str:USDT-abcdef",
+                        "str:tokens.item|u32:2": "str:ASH-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000",
+                        "str:lpTokenIdentifier": "str:USDTASHLP-abcdef"
+                    },
+                    "esdt": {
+                        "str:USDTASHLP-abcdef": {
+                            "roles": [
+                                "ESDTRoleLocalMint",
+                                "ESDTRoleLocalBurn"
+                            ]
+                        }
+                    },
+                    "code": "file:pool_v2.wasm"
+                },
+                "sc:usdc_usdt_busd_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:tokens.value|u32:1": "str:USDC-abcdef",
+                        "str:tokens.value|u32:2": "str:USDT-abcdef",
+                        "str:tokens.value|u32:3": "str:BUSD-abcdef",
+                        "str:tokens.node_links|u32:1": "u64:2",
+                        "str:tokens.node_links|u32:2": "0x0000000100000003",
+                        "str:tokens.node_links|u32:3": "0x0000000200000000",
+                        "str:tokens.node_id|nested:str:USDC-abcdef": "1",
+                        "str:tokens.node_id|nested:str:USDT-abcdef": "2",
+                        "str:tokens.node_id|nested:str:BUSD-abcdef": "3",
+                        "str:tokens.mapped|nested:str:USDC-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.mapped|nested:str:USDT-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.mapped|nested:str:BUSD-abcdef": "0x00000000000000080de0b6b3a7640000",
+                        "str:tokens.info": "0x00000003000000010000000300000003",
+                        "str:state": "1",
+                        "str:precision": "1000000000000000000",
+                        "str:initial_amp_factor": "100",
+                        "str:future_amp_factor": "100",
+                        "str:swap_fee_percent": "100",
+                        "str:lpTokenIdentifier": "str:USDCTBLP-abcdef"
+                    },
+                    "esdt": {
+                        "str:USDCTBLP-abcdef": {
+                            "roles": [
+                                "ESDTRoleLocalMint",
+                                "ESDTRoleLocalBurn"
+                            ]
+                        }
+                    },
+                    "code": "file:pool_v1.wasm"
+                },
+                "sc:busd_htm_ashswap_pool": {
+                    "owner": "sc:ashswap_router",
+                    "nonce": "0",
+                    "balance": "0",
+                    "storage": {
+                        "str:_price_oracle": "500000000000000000",
+                        "str:adjustment_step": "146000000000000",
+                        "str:admin_fee": "5000000000",
+                        "str:allowed_extra_profit": "2000000000000",
+                        "str:balances.len": "2",
+                        "str:factory": "sc:ashswap_router",
+                        "str:fee_gamma": "230000000000000",
+                        "str:future_a": "1000000",
+                        "str:future_gamma": "1000000000000000",
+                        "str:initial_a": "1000000",
+                        "str:initial_gamma": "1000000000000000",
+                        "str:last_prices": "500000000000000000",
+                        "str:ma_half_time": "600",
+                        "str:mid_fee": "26000000",
+                        "str:out_fee": "45000000",
+                        "str:pool_type": "3",
+                        "str:precisions.item|u32:1": "1000000000000",
+                        "str:precisions.item|u32:2": "1000000000000",
+                        "str:precisions.len": "2",
+                        "str:price_scale": "500000000000000000",
+                        "str:state": "1",
+                        "str:tokens.item|u32:1": "str:BUSD-abcdef",
+                        "str:tokens.item|u32:2": "str:HTM-abcdef",
+                        "str:tokens.len": "2",
+                        "str:xcp_profit_a": "1000000000000000000",
+                        "str:lpTokenIdentifier": "str:BUSDHTMLP-abcdef"
+                    },
+                    "esdt": {
+                        "str:BUSDHTMLP-abcdef": {
+                            "roles": [
+                                "ESDTRoleLocalMint",
+                                "ESDTRoleLocalBurn"
+                            ]
+                        }
+                    },
+                    "code": "file:pool_v2.wasm"
+                },
+                "sc:ashswap_router": {
+                    "owner": "address:ashswap_owner",
+                    "nonce": "4",
+                    "balance": "0",
+                    "storage": {
+                        "str:emergency_admin": "address:ashswap_owner",
+                        "str:ownership_admin": "address:ashswap_owner",
+                        "str:fee_distributor_address": "sc:ashswap_fee_collector",
+                        "str:pool_map.info": "0x00000004000000010000000400000004",
+                        "str:pool_map.node_links|u32:1": "u32:0|u32:2",
+                        "str:pool_map.node_links|u32:2": "u32:1|u32:3",
+                        "str:pool_map.node_links|u32:3": "u32:2|u32:4",
+                        "str:pool_map.node_links|u32:4": "u32:3|u32:0",
+                        "str:pool_map.node_id|u32:2|nested:str:BUSD-abcdef|nested:str:WEGLD-abcdef": "1",
+                        "str:pool_map.value|u32:1": "0x000000020000000b425553442d6162636465660000000c5745474c442d616263646566",
+                        "str:pool_map.value|u32:2": "0x000000020000000a4153482d6162636465660000000b555344542d616263646566",
+                        "str:pool_map.value|u32:3": "0x000000030000000b425553442d6162636465660000000b555344432d6162636465660000000b555344542d616263646566",
+                        "str:pool_map.value|u32:4": "0x000000020000000a48544d2d6162636465660000000b425553442d616263646566",
+                        "str:pool_map.mapped|u32:2|nested:str:BUSD-abcdef|nested:str:WEGLD-abcdef": "0x0000000000000000627573645f65676c645f617368737761705f706f6f6c5f5f",
+                        "str:pool_map.mapped|u32:3|nested:str:BUSD-abcdef|nested:str:USDC-abcdef|nested:str:USDT-abcdef": "0x0000000000000000757364635f757364745f627573645f617368737761705f70",
+                        "str:pool_map.mapped|u32:2|nested:str:ASH-abcdef|nested:str:USDT-abcdef": "0x0000000000000000757364745f6173685f617368737761705f706f6f6c5f5f5f",
+                        "str:pool_map.mapped|u32:2|nested:str:HTM-abcdef|nested:str:BUSD-abcdef": "0x0000000000000000627573645f68746d5f617368737761705f706f6f6c5f5f5f",
+                        "str:pool_map.node_id|u32:3|nested:str:BUSD-abcdef|nested:str:USDC-abcdef|nested:str:USDT-abcdef": "3",
+                        "str:pool_map.node_id|u32:2|nested:str:ASH-abcdef|nested:str:USDT-abcdef": "2",
+                        "str:pool_map.node_id|u32:2|nested:str:HTM-abcdef|nested:str:BUSD-abcdef": "4",
+                        "str:pool_template_address.info": "0x00000002000000010000000200000002",
+                        "str:pool_template_address.node_links|u32:1": "u32:0|u32:2",
+                        "str:pool_template_address.node_links|u32:2": "u32:1|u32:0",
+                        "str:pool_template_address.node_id|u8:0": "1",
+                        "str:pool_template_address.node_id|u8:3": "2",
+                        "str:pool_template_address.value|u32:2": "3",
+                        "str:pool_template_address.mapped|u8:0": "sc:ashswap_pool_template",
+                        "str:pool_template_address.mapped|u8:3": "sc:ashswap_pool_v2_template",
+                        "str:CB_CLOSUREdeploy busd-htm pool............": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b0000000500000020617368737761705f6f776e65725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f000000200000000000000000627573645f68746d5f617368737761705f706f6f6c5f5f5f0000000000000001030000001d0000000b425553442d6162636465660000000a48544d2d616263646566",
+                        "str:CB_CLOSUREdeploy busd-egld pool...........": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b0000000500000020617368737761705f6f776e65725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f000000200000000000000000627573645f65676c645f617368737761705f706f6f6c5f5f0000000000000001030000001f0000000b425553442d6162636465660000000c5745474c442d616263646566",
+                        "str:CB_CLOSUREdeploy usdc-usdt-busd pool......": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b0000000500000020617368737761705f6f776e65725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f000000200000000000000000757364635f757364745f627573645f617368737761705f7000000000000000000000002d0000000b555344432d6162636465660000000b555344542d6162636465660000000b425553442d616263646566",
+                        "str:CB_CLOSUREdeploy usdt-ash pool............": "0x000000176c705f746f6b656e5f69737375655f63616c6c6261636b0000000500000020617368737761705f6f776e65725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f000000200000000000000000757364745f6173685f617368737761705f706f6f6c5f5f5f0000000000000001030000001d0000000b555344542d6162636465660000000a4153482d616263646566"
+                    },
+                    "code": "file:pool_router.wasm"
+                }
+            }
+        }
+    ]
+}

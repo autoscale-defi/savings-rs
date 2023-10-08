@@ -1,0 +1,106 @@
+{
+    "name": "saving-rs",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "ashswap/complete_setup.steps.json"
+        },
+        {
+            "step": "externalSteps",
+            "path": "autoscale/deploy_contracts.steps.json"
+        },
+        {
+            "step": "externalSteps",
+            "path": "autoscale/populate_router_cache.steps.json"
+        },
+        {
+            "step": "setState",
+            "accounts": {
+                "address:saving_owner": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000",
+                    "esdt": {}
+                },
+                "address:controller_contract": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000",
+                    "esdt": {
+                        "str:USDC-abcdef": "1,000,000,000"
+                    }
+                }
+            },
+            "newAddresses": [
+                {
+                    "creatorAddress": "address:saving_owner",
+                    "creatorNonce": "0",
+                    "newAddress": "sc:saving"
+                }
+            ],
+            "currentBlockInfo": {
+                "blockTimestamp": "0",
+                "blockNonce": "0",
+                "blockRound": "0",
+                "blockEpoch": "0"
+            }
+        },
+        {
+            "step": "scDeploy",
+            "txId": "deploy saving",
+            "tx": {
+                "from": "address:saving_owner",
+                "contractCode": "file:../output/saving-rs.wasm",
+                "arguments": [
+                    "address:controller_contract",
+                    "sc:ats_ash_holder",
+                    "sc:ats_router",
+                    "str:USDC-abcdef"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "whitelist saving controller on autoscale's ash holder",
+            "tx": {
+                "from": "address:ats_owner",
+                "to": "sc:ats_ash_holder",
+                "function": "whitelistContract",
+                "arguments": [
+                    "sc:saving"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/saving-rs.wasm",
+                    "storage": {
+                        "str:controller_address": "address:controller_contract",
+                        "str:holder_address": "sc:ats_ash_holder",
+                        "str:zap_address": "sc:ats_router",
+                        "str:asset_token_identifier": "str:USDC-abcdef"
+                    }
+                },
+                "+": "*"
+            }
+        }
+    ]
+}

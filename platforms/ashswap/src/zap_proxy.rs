@@ -67,6 +67,7 @@ pub trait ZapProxyModule: ContractBase
                 &None,
                 false
             )
+            .with_esdt_transfer(in_payment)
             .execute_on_dest_context::<EgldOrEsdtTokenPayment<Self::Api>>()
             .unwrap_esdt()
     }

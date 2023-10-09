@@ -6,6 +6,11 @@ pub struct EnterFarmResult<M: ManagedTypeApi> {
     pub other_payments: ManagedVec<M, EsdtTokenPayment<M>>
 }
 
+pub struct ClaimRewardsResult<M: ManagedTypeApi> {
+    pub share_token_payment: EsdtTokenPayment<M>,
+    pub other_payments: ManagedVec<M, EsdtTokenPayment<M>>
+}
+
 mod proxy {
     multiversx_sc::imports!();
 
@@ -48,28 +53,14 @@ pub trait HolderProxyModule: ContractBase
             .execute_on_dest_context();
 
         let share_token_identifier = self.share_token_identifier_for_farm(farm_address).get();
-        let mut opt_share_token_payment: Option<EsdtTokenPayment<Self::Api>> = None;
-        let mut other_payments = ManagedVec::new();
-        for payment in result.iter() {
-            if payment.token_identifier == share_token_identifier {
-                require!(
-                    opt_share_token_payment.is_none(),
-                    "Received multiple share tokens"
-                );
-
-                opt_share_token_payment = Some(payment)
-            } else {
-                other_payments.push(payment)
-            }
-        }
-
-        let Some(share_token_payment) = opt_share_token_payment else {
-            sc_panic!("No share payment received");
-        };
+        let separated_payments = self.separate_specific_payment_from_another_ones(
+            &result,
+            &share_token_identifier
+        );
 
         EnterFarmResult {
-            share_token_payment,
-            other_payments,
+            share_token_payment: separated_payments.0,
+            other_payments: separated_payments.1,
         }
     }
 
@@ -77,11 +68,53 @@ pub trait HolderProxyModule: ContractBase
         &self,
         current_position_payment: EsdtTokenPayment<Self::Api>,
         farm_address: &ManagedAddress<Self::Api>
-    ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
-        self.holder_proxy(self.holder_address().get())
+    ) -> ClaimRewardsResult<Self::Api> {
+        let result: ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> = self.holder_proxy(self.holder_address().get())
             .claim_farm_rewards_forward(farm_address)
             .with_esdt_transfer(current_position_payment)
-            .execute_on_dest_context()
+            .execute_on_dest_context();
+
+        let share_token_identifier = self.share_token_identifier_for_farm(farm_address).get();
+        let separated_payments = self.separate_specific_payment_from_another_ones(
+            &result,
+            &share_token_identifier
+        );
+
+
+        ClaimRewardsResult {
+            share_token_payment: separated_payments.0,
+            other_payments: separated_payments.1,
+        }
+    }
+
+    fn separate_specific_payment_from_another_ones(
+        &self,
+        payments: &ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>,
+        specific_token_identifier: &TokenIdentifier<Self::Api>
+    ) -> (EsdtTokenPayment<Self::Api>, ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>) {
+        let mut opt_specific_token_payment: Option<EsdtTokenPayment<Self::Api>> = None;
+        let mut other_payments = ManagedVec::new();
+        for payment in payments.iter() {
+            if &payment.token_identifier == specific_token_identifier {
+                require!(
+                    opt_specific_token_payment.is_none(),
+                    "Received multiple share tokens"
+                );
+
+                opt_specific_token_payment = Some(payment)
+            } else {
+                other_payments.push(payment)
+            }
+        }
+
+        let Some(specific_token_payment) = opt_specific_token_payment else {
+            sc_panic!("No payment received for token: {}", specific_token_identifier);
+        };
+
+        (
+            specific_token_payment,
+            other_payments
+        )
     }
 
     #[proxy]

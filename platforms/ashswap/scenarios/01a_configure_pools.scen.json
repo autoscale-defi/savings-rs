@@ -7,6 +7,28 @@
         },
         {
             "step": "scCall",
+            "txId": "add_ash_as_swappable_token",
+            "tx": {
+                "from": "address:saving_owner",
+                "to": "sc:saving",
+                "function": "setSwappableToken",
+                "arguments": [
+                    "str:ASH-abcdef",
+                    "true"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
             "txId": "add busd egld pool",
             "tx": {
                 "from": "address:saving_owner",
@@ -100,6 +122,7 @@
                         "str:share_token_identifier_for_farm|sc:ashswap_busd_egld_farm": "str:BUSDEGLDFA-abcdef",
                         "str:share_token_identifier_for_farm|sc:ashswap_usdc_t_b_farm": "str:USDCTBFA-abcdef",
                         "str:pools_total_weight": "3",
+                        "str:swappable_tokens|nested:str:ASH-abcdef": "true",
                         "str:zap_start_exchange_for_token|nested:str:BUSDEGLDLP-abcdef": "u8:1|u8:1|nested:str:BUSD-abcdef"
                     }
                 },

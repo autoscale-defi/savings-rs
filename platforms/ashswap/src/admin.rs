@@ -31,6 +31,20 @@ pub trait AdminModule: ContractBase
     }
 
     #[only_owner]
+    #[endpoint(setSwappableToken)]
+    fn set_swappable_token(
+        &self,
+        token_identifier: TokenIdentifier<Self::Api>,
+        is_swappable: bool
+    ) {
+        if is_swappable {
+            self.swappable_tokens().add(&token_identifier)
+        } else {
+            self.swappable_tokens().remove(&token_identifier)
+        }
+    }
+
+    #[only_owner]
     #[endpoint(removePool)]
     fn remove_pool(
         &self

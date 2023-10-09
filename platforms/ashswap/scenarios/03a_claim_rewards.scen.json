@@ -3,22 +3,23 @@
     "steps": [
         {
             "step": "externalSteps",
-            "path": "01a_configure_pools.scen.json"
+            "path": "02a_deposit.scen.json"
+        },
+        {
+            "step": "setState",
+            "currentBlockInfo": {
+                "blockNonce": "1,000,000",
+                "blockTimestamp": "1,000,000"
+            }
         },
         {
             "step": "scCall",
-            "txId": "controller deposits USDC",
+            "txId": "controller claim rewards",
             "tx": {
                 "from": "address:controller_contract",
                 "to": "sc:saving",
-                "function": "deposit",
+                "function": "claimRewards",
                 "arguments": [],
-                "esdtValue": [
-                    {
-                        "tokenIdentifier": "str:USDC-abcdef",
-                        "value": "1,000,000"
-                    }
-                ],
                 "gasLimit": "300,000,000",
                 "gasPrice": "0"
             },
@@ -33,6 +34,13 @@
         {
             "step": "checkState",
             "accounts": {
+                "address:controller_contract": {
+                    "balance": "*",
+                    "nonce": "*",
+                    "esdt": {
+                        "str:USDC-abcdef": "1,629,964,014"
+                    }
+                },
                 "sc:saving": {
                     "owner": "address:saving_owner",
                     "nonce": "0",
@@ -41,7 +49,7 @@
                         "str:USDCTBFA-abcdef": {
                             "instances": [
                                 {
-                                    "nonce": "1",
+                                    "nonce": "2",
                                     "balance": "133200"
                                 }
                             ]
@@ -49,7 +57,7 @@
                         "str:BUSDEGLDFA-abcdef": {
                             "instances": [
                                 {
-                                    "nonce": "1",
+                                    "nonce": "2",
                                     "balance": "136396357724572723"
                                 }
                             ]
@@ -58,12 +66,12 @@
                     "storage": {
                         "str:current_position_for_farm|sc:ashswap_busd_egld_farm": {
                             "00-token_identifier": "nested:str:BUSDEGLDFA-abcdef",
-                            "01-nonce": "u64:1",
+                            "01-nonce": "u64:2",
                             "02-amount": "biguint:136396357724572723"
                         },
                         "str:current_position_for_farm|sc:ashswap_usdc_t_b_farm": {
                             "00-token_identifier": "nested:str:USDCTBFA-abcdef",
-                            "01-nonce": "u64:1",
+                            "01-nonce": "u64:2",
                             "02-amount": "biguint:133200"
                         },
                         "+": "*"

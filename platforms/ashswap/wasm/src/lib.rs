@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           16
+// Endpoints:                           17
 // Async Callback (empty):               1
-// Total number of exported functions:  18
+// Total number of exported functions:  19
 
 #![no_std]
 
@@ -36,6 +36,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getZapStartExchangeForToken => zap_start_exchange_for_token
         getWaitingRewards => waiting_rewards
         addPool => add_pool
+        setSwappableToken => set_swappable_token
         removePool => remove_pool
         setZapStartExchangeForToken => set_zap_start_exchange_for_token
     )

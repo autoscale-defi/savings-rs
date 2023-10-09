@@ -8,12 +8,12 @@
                     "nonce": "0",
                     "balance": "1,000,000,000",
                     "esdt": {
-                        "str:USDC-abcdef": "5,000,000,000,000",
-                        "str:USDT-abcdef": "5,000,000,000,000",
-                        "str:BUSD-abcdef": "5,000,000,000,000",
-                        "str:WEGLD-abcdef": "5,000,000,000,000",
-                        "str:ASH-abcdef": "5,000,000,000,000",
-                        "str:HTM-abcdef": "5,000,000,000,000"
+                        "str:USDC-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:USDT-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:BUSD-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:WEGLD-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:HTM-abcdef": "5,000,000,000,000,000,000,000"
                     }
                 }
             }
@@ -27,11 +27,11 @@
                 "esdtValue": [
                     {
                         "tokenIdentifier": "str:BUSD-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     },
                     {
                         "tokenIdentifier": "str:WEGLD-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     }
                 ],
                 "function": "addLiquidity",
@@ -59,11 +59,11 @@
                 "esdtValue": [
                     {
                         "tokenIdentifier": "str:USDT-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     },
                     {
                         "tokenIdentifier": "str:ASH-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     }
                 ],
                 "function": "addLiquidity",
@@ -91,15 +91,15 @@
                 "esdtValue": [
                     {
                         "tokenIdentifier": "str:USDC-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     },
                     {
                         "tokenIdentifier": "str:USDT-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     },
                     {
                         "tokenIdentifier": "str:BUSD-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     }
                 ],
                 "function": "addLiquidity",
@@ -127,11 +127,11 @@
                 "esdtValue": [
                     {
                         "tokenIdentifier": "str:BUSD-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     },
                     {
                         "tokenIdentifier": "str:HTM-abcdef",
-                        "value": "2,100,000"
+                        "value": "2,100,000,000,000,000"
                     }
                 ],
                 "function": "addLiquidity",

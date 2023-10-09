@@ -234,9 +234,20 @@
                         "str:voting_escrow_address": "sc:ashswap_voting_escrow",
                         "str:farm_controller_address": "sc:ashswap_farm_controller",
                         "str:farm_rewarder_address": "sc:ashswap_rewarder",
-                        "0x43425f434c4f5355524563726561746520757364632d757364742d62757364206661726d2e2e2e2e2e2e": "0x0000001772656769737465725f746f6b656e5f63616c6c6261636b00000002000000200000000000000000617368737761705f757364635f745f625f6661726d5f5f5f0000000f5553444354424c502d616263646566",
-                        "0x43425f434c4f5355524563726561746520627573642d7765676c64206661726d2e2e2e2e2e2e2e2e2e2e": "0x0000001772656769737465725f746f6b656e5f63616c6c6261636b00000002000000200000000000000000617368737761705f627573645f65676c645f6661726d5f5f000000114255534445474c444c502d616263646566",
-                        "0x43425f434c4f5355524563726561746520757364742d617368206661726d2e2e2e2e2e2e2e2e2e2e2e2e": "0x0000001772656769737465725f746f6b656e5f63616c6c6261636b00000002000000200000000000000000617368737761705f757364745f6173685f6661726d5f5f5f00000010555344544153484c502d616263646566"
+                        "0x43425f434c4f5355524563726561746520757364632d757364742d62757364206661726d2e2e2e2e2e2e": "*",
+                        "0x43425f434c4f5355524563726561746520627573642d7765676c64206661726d2e2e2e2e2e2e2e2e2e2e": "*",
+                        "0x43425f434c4f5355524563726561746520757364742d617368206661726d2e2e2e2e2e2e2e2e2e2e2e2e": "*"
+                    }
+                },
+                "sc:ashswap_rewarder": {
+                    "owner": "address:ashswap_owner",
+                    "code": "*",
+                    "storage": {
+                        "str:ash_token_id": "str:ASH-abcdef",
+                        "str:reward_per_sec|u64:0": "5,000"
+                    },
+                    "esdt": {
+                        "str:ASH-abcdef": "*"
                     }
                 },
                 "sc:ashswap_busd_egld_farm": {
@@ -301,8 +312,10 @@
                         "str:voting_escrow_address": "sc:ashswap_voting_escrow",
                         "str:farm_controller_address": "sc:ashswap_farm_controller",
                         "str:farm_rewarder_address": "sc:ashswap_rewarder",
-                        "str:farm_map.info": "0x00000001000000010000000100000001",
-                        "str:farm_map.node_links|u32:1": "u64:0",
+                        "str:farm_map.info": "0x00000003000000010000000300000003",
+                        "str:pool_map.node_links|u32:1": "u32:0|u32:2",
+                        "str:pool_map.node_links|u32:2": "u32:1|u32:3",
+                        "str:pool_map.node_links|u32:3": "u32:2|u32:0",
                         "str:farm_map.value|u32:1": "str:BUSDEGLDLP-abcdef",
                         "str:farm_map.value|u32:2": "str:USDCTBLP-abcdef",
                         "str:farm_map.value|u32:3": "str:USDTASHLP-abcdef",
@@ -311,7 +324,21 @@
                         "str:farm_map.node_id|nested:str:USDTASHLP-abcdef": "3",
                         "str:farm_map.mapped|nested:str:BUSDEGLDLP-abcdef": "sc:ashswap_busd_egld_farm",
                         "str:farm_map.mapped|nested:str:USDCTBLP-abcdef": "sc:ashswap_usdc_t_b_farm",
-                        "str:farm_map.mapped|nested:str:USDTASHLP-abcdef": "sc:ashswap_usdt_ash_farm"
+                        "str:farm_map.mapped|nested:str:USDTASHLP-abcdef": "sc:ashswap_usdt_ash_farm",
+                        "str:farm_map.node_links|u32:1": "u32:0|u32:2",
+                        "str:farm_map.node_links|u32:2": "u32:1|u32:3",
+                        "str:farm_map.node_links|u32:3": "u32:2|u32:0"
+                    }
+                },
+                "sc:ashswap_rewarder": {
+                    "owner": "address:ashswap_owner",
+                    "code": "file:rewarder.wasm",
+                    "storage": {
+                        "str:ash_token_id": "str:ASH-abcdef",
+                        "str:reward_per_sec|u64:0": "5,000"
+                    },
+                    "esdt": {
+                        "str:ASH-abcdef": "1,000,000,000,000,000,000,000,000,000,000"
                     }
                 },
                 "sc:ashswap_busd_egld_farm": {
@@ -389,6 +416,155 @@
                         }
                     }
                 }
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add farm router to farm rewarder",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_rewarder",
+                "function": "setFarmRouterAddress",
+                "arguments": [
+                    "sc:ashswap_farm_router"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add farm router to farm controller",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_farm_controller",
+                "function": "setFarmRouterAddress",
+                "arguments": [
+                    "sc:ashswap_farm_router"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add type to farm controller",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_farm_controller",
+                "function": "addType",
+                "arguments": [
+                    "str:test",
+                    "1"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add busd egld farm to farm controller",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_farm_controller",
+                "function": "addFarm",
+                "arguments": [
+                    "sc:ashswap_busd_egld_farm",
+                    "0"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add usdc usdt busd farm to farm controller",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_farm_controller",
+                "function": "addFarm",
+                "arguments": [
+                    "sc:ashswap_usdc_t_b_farm",
+                    "0"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add usdt ash farm to farm controller",
+            "tx": {
+                "from": "address:ashswap_owner",
+                "to": "sc:ashswap_farm_controller",
+                "function": "addFarm",
+                "arguments": [
+                    "sc:ashswap_usdt_ash_farm",
+                    "0"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "busd egld farm start produce rewards",
+            "tx": {
+                "from": "sc:ashswap_farm_router",
+                "to": "sc:ashswap_busd_egld_farm",
+                "function": "startProduceRewards",
+                "arguments": [],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "message": "",
+                "status": "",
+                "gas": "*",
+                "refund": "*"
             }
         },
         {

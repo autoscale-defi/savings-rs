@@ -51,7 +51,6 @@ pub trait AshSwapPlatformContract: ContractBase
         let mut left_payment_amount = payment.amount.clone();
         let mut used_weight = 0u64; // no .len() on pools, this is an alternative way to know if the pool in the for loop is the last one
 
-        let mut test = 0u64;
         for pool in pools {
             let payment_amount = if used_weight + pool.weight == total_weight { // this is the last pool, let's use the whole unused payment
                 core::mem::take(&mut left_payment_amount)
@@ -98,8 +97,6 @@ pub trait AshSwapPlatformContract: ContractBase
             for other_payment in enter_farms_payments.other_payments.iter() {
                 self.waiting_rewards().push(&other_payment);
             }
-
-            test += 1;
         }
     }
 
@@ -130,12 +127,14 @@ pub trait AshSwapPlatformContract: ContractBase
                 continue
             }
 
-            let rewards = self.claim_farm_rewards(
+            let claim_rewards_result = self.claim_farm_rewards(
                 current_farm_position_mapper.get(),
                 &pool.farm_address
             );
 
-            for reward in rewards.iter() {
+            current_farm_position_mapper.set(claim_rewards_result.share_token_payment);
+
+            for reward in claim_rewards_result.other_payments.iter() {
                 if reward.amount > 0 {
                     all_rewards.push(reward)
                 }

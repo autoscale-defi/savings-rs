@@ -6,13 +6,6 @@
             "path": "02a_deposit.scen.json"
         },
         {
-            "step": "setState",
-            "currentBlockInfo": {
-                "blockNonce": "1,000,000",
-                "blockTimestamp": "1,000,000"
-            }
-        },
-        {
             "step": "scCall",
             "txId": "controller claim rewards",
             "tx": {
@@ -38,7 +31,7 @@
                     "balance": "*",
                     "nonce": "*",
                     "esdt": {
-                        "str:USDC-abcdef": "1,629,964,014"
+                        "str:USDC-abcdef": "999,000,000"
                     }
                 },
                 "sc:saving": {

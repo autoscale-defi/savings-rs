@@ -6,6 +6,11 @@ pub struct EnterFarmResult<M: ManagedTypeApi> {
     pub other_payments: ManagedVec<M, EsdtTokenPayment<M>>
 }
 
+pub struct ExitFarmResult<M: ManagedTypeApi> {
+    pub lp_token_payment: EsdtTokenPayment<M>,
+    pub other_payments: ManagedVec<M, EsdtTokenPayment<M>>
+}
+
 pub struct ClaimRewardsResult<M: ManagedTypeApi> {
     pub share_token_payment: EsdtTokenPayment<M>,
     pub other_payments: ManagedVec<M, EsdtTokenPayment<M>>
@@ -19,6 +24,13 @@ mod proxy {
         #[payable("*")]
         #[endpoint(enterFarmForward)]
         fn enter_farm_forward(
+            &self,
+            farm_address: ManagedAddress<Self::Api>
+        ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>;
+
+        #[payable("*")]
+        #[endpoint(exitFarmForward)]
+        fn exit_farm_forward(
             &self,
             farm_address: ManagedAddress<Self::Api>
         ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>;
@@ -60,6 +72,28 @@ pub trait HolderProxyModule: ContractBase
 
         EnterFarmResult {
             share_token_payment: separated_payments.0,
+            other_payments: separated_payments.1,
+        }
+    }
+
+    fn exit_farm_forward(
+        &self,
+        position_payment: EsdtTokenPayment<Self::Api>,
+        pool_lp_token_identifier: &TokenIdentifier<Self::Api>,
+        farm_address: &ManagedAddress<Self::Api>
+    ) -> ExitFarmResult<Self::Api> {
+        let result: ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> = self.holder_proxy(self.holder_address().get())
+            .exit_farm_forward(farm_address)
+            .with_esdt_transfer(position_payment)
+            .execute_on_dest_context();
+
+        let separated_payments = self.separate_specific_payment_from_another_ones(
+            &result,
+            &pool_lp_token_identifier
+        );
+
+        ExitFarmResult {
+            lp_token_payment: separated_payments.0,
             other_payments: separated_payments.1,
         }
     }

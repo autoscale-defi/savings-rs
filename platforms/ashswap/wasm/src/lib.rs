@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           17
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:  19
+// Total number of exported functions:  21
 
 #![no_std]
 
@@ -23,6 +23,7 @@ multiversx_sc_wasm_adapter::endpoints! {
     (
         init => init
         deposit => deposit
+        withdraw => withdraw
         claimRewards => claim_rewards_endpoint
         getControllerAddress => controller_address
         getHolderAddress => holder_address
@@ -35,6 +36,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         getZapAddress => zap_address
         getZapStartExchangeForToken => zap_start_exchange_for_token
         getWaitingRewards => waiting_rewards
+        getDepositedAssets => deposited_assets
         addPool => add_pool
         setSwappableToken => set_swappable_token
         removePool => remove_pool

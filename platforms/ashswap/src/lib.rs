@@ -98,6 +98,78 @@ pub trait AshSwapPlatformContract: ContractBase
                 self.waiting_rewards().push(&other_payment);
             }
         }
+
+        // TEMP : This is only to be able to deliver a quick PoC for the hackathon.
+        self.deposited_assets().update(|amount| *amount += payment.amount);
+    }
+
+    #[endpoint]
+    fn withdraw(&self, amount: BigUint<Self::Api>) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
+        let caller = self.blockchain().get_caller();
+
+        require!(
+            caller == self.controller_address().get(),
+            "Only the controller can call this endpoint"
+        );
+
+        let total_deposited_amount = self.deposited_assets().get();
+
+        require!(
+            amount <= total_deposited_amount,
+            "Too much withdrawal amount requested"
+        );
+
+        let pools_mapper = self.pools();
+        let pools = pools_mapper.values();
+
+        let mut results = ManagedVec::new();
+        for pool in pools {
+            let current_farm_position_mapper = self.current_position_for_farm(&pool.farm_address);
+            let current_farm_position = current_farm_position_mapper.get();
+            let amount_to_exit: BigUint<Self::Api> = &current_farm_position.amount * &amount / &total_deposited_amount;
+            let position_to_exit = EsdtTokenPayment::new(
+                current_farm_position.token_identifier.clone(),
+                current_farm_position.token_nonce,
+                amount_to_exit
+            );
+
+            if position_to_exit.amount == current_farm_position.amount {
+                current_farm_position_mapper.clear();
+            } else {
+                current_farm_position_mapper.update(|position| position.amount -= &position_to_exit.amount);
+            }
+
+            let exit_farm_result = self.exit_farm_forward(
+                position_to_exit,
+                &self.lp_token_identifier_for_pool(&pool.pool_address).get(),
+                &pool.farm_address
+            );
+
+            let asset_token_identifier = self.asset_token_identifier().get();
+            let zap_out_result = self.zap_out_payment(
+                &pool.pool_address,
+                &asset_token_identifier,
+                exit_farm_result.lp_token_payment
+            );
+            if zap_out_result.amount > 0 {
+                self.send()
+                    .direct_esdt(
+                        &caller,
+                        &zap_out_result.token_identifier,
+                        zap_out_result.token_nonce,
+                        &zap_out_result.amount
+                    );
+                results.push(zap_out_result);
+            }
+
+            let sent_rewards = self.handle_rewards(&caller, &exit_farm_result.other_payments);
+            results.append_vec(sent_rewards);
+        }
+
+        // TEMP : This is only to be able to deliver a quick PoC for the hackathon.
+        self.deposited_assets().update(|deposited_amount| *deposited_amount -= &amount);
+
+        results
     }
 
     #[endpoint(claimRewards)]
@@ -141,6 +213,14 @@ pub trait AshSwapPlatformContract: ContractBase
             }
         }
 
+        self.handle_rewards(&receiver, &all_rewards)
+    }
+
+    fn handle_rewards(
+        &self,
+        receiver: &ManagedAddress<Self::Api>,
+        rewards: &ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>
+    ) -> ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>> {
         // Let's swap rewards to the asset token
         let mut total_assets_payment = EsdtTokenPayment::new(
             self.asset_token_identifier().get(),
@@ -148,7 +228,7 @@ pub trait AshSwapPlatformContract: ContractBase
             BigUint::zero()
         );
         let mut results = ManagedVec::new();
-        for reward in all_rewards.iter() {
+        for reward in rewards.iter() {
             if reward.token_identifier == total_assets_payment.token_identifier {
                 total_assets_payment.amount += &reward.amount;
                 continue

@@ -35,6 +35,17 @@ mod proxy {
             opt_min_amount: &Option<BigUint<Self::Api>>,
         ) -> ZapInResultInfos<Self::Api>;
 
+        #[endpoint(zapOut)]
+        #[payable("*")]
+        fn zap_out(
+            &self,
+            exchange: &ZapExchangeInfos<Self::Api>,
+            pool_address: &ManagedAddress<Self::Api>,
+            dest_token: &TokenIdentifier<Self::Api>,
+            opt_min_amount: &Option<BigUint<Self::Api>>,
+            should_unwrap_egld: bool
+        ) -> EgldOrEsdtTokenPayment<Self::Api>;
+
         #[endpoint(swap)]
         #[payable("*")]
         fn swap(
@@ -92,8 +103,35 @@ pub trait ZapProxyModule: ContractBase
             )
             .execute_on_dest_context();
 
-        // Todo : handle left payments
+        // todo after hackathon : handle left payments
         result.lp_payment
+    }
+
+    fn zap_out_payment(
+        &self,
+        pool_address: &ManagedAddress<Self::Api>,
+        dest_token: &TokenIdentifier<Self::Api>,
+        in_payment: EsdtTokenPayment<Self::Api>
+    ) -> EsdtTokenPayment<Self::Api> {
+        let start_exchange = self.get_zap_start_exchange_for_token_or_default(
+            &self.lp_token_identifier_for_pool(&pool_address).get()
+        );
+
+        // the result token won't be EGLD, hence no need to use the EgldOrEsdtTokenPayment struct
+        let result: EsdtTokenPayment<Self::Api> = self.zap_proxy(self.zap_address().get())
+            .zap_out(
+                &start_exchange,
+                pool_address,
+                dest_token,
+                &None,
+                false
+            )
+            .with_esdt_transfer(
+                in_payment
+            )
+            .execute_on_dest_context();
+
+        result
     }
 
     #[proxy]

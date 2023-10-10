@@ -71,6 +71,14 @@ pub trait StorageModule: ContractBase {
     #[storage_mapper("swappable_tokens")]
     fn swappable_tokens(&self) -> WhitelistMapper<Self::Api, TokenIdentifier<Self::Api>>;
 
+    /// TEMP: This storage mapper is only useful to do a quick PoC for the hackathon.
+    /// It doesn't represent an exact value of assets held by this contracts.
+    /// The actual asset amount can vary for a lot of reasons: slippage, fees, hacks of third-party contracts, etc...
+    /// After the hackathon, it'll be replaced by a real computation, using AshSwap/Autoscale contracts' views.
+    #[storage_mapper("deposited_assets")]
+    #[view(getDepositedAssets)]
+    fn deposited_assets(&self) -> SingleValueMapper<Self::Api, BigUint<Self::Api>>;
+
     fn get_zap_start_exchange_for_token_or_default(
         &self,
         token_id: &TokenIdentifier<Self::Api>

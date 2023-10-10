@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                            0
+// Endpoints:                           12
 // Async Callback (empty):               1
-// Total number of exported functions:   2
+// Total number of exported functions:  14
 
 #![no_std]
 
@@ -22,6 +22,18 @@ multiversx_sc_wasm_adapter::endpoints! {
     controller
     (
         init => init
+        deposit => deposit
+        withdraw => withdraw
+        claimRewards => claim_rewards
+        claimControllerRewards => claim_controller_rewards
+        rebalance => rebalance
+        unbond => unbond
+        addPlatform => add_platform
+        setPlatformDistribution => set_platforms_distribution
+        issueAndSetLocalRoles => issue_and_set_local_roles
+        setControllerState => set_controller_state
+        setFeesDistribution => set_fees_distribution
+        setRewardsPerShare => set_rewards_per_share
     )
 }
 

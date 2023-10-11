@@ -55,6 +55,13 @@ pub trait TokenModule {
         );
     }
 
+    fn burn_savings_tokens(&self, tokens: &ManagedVec<EsdtTokenPayment<Self::Api>>) {
+        for token in tokens.iter() {
+            self.savings_token()
+                .nft_burn(token.token_nonce, &token.amount);
+        }
+    }
+
     #[storage_mapper("savingsTokenId")]
     fn savings_token(&self) -> NonFungibleTokenMapper<Self::Api>;
 

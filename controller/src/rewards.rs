@@ -113,6 +113,21 @@ pub trait RewardsModule {
         }
     }
 
+    #[only_owner]
+    #[endpoint(setRewardsPerSharePerBlock)]
+    fn set_rewards_per_share_per_block(&self, new_rewards_per_share_per_block: BigUint) {
+        self.update_rewards_per_share();
+        self.rewards_per_share_per_block()
+            .set(new_rewards_per_share_per_block);
+    }
+
+    #[only_owner]
+    #[endpoint(setProduceRewardsEnabled)]
+    fn set_produce_rewards_enabled(&self, enabled: bool) {
+        self.update_rewards_per_share();
+        self.produce_rewards_enabled().set(enabled);
+    }
+
     #[view(isProduceRewardsEnabled)]
     #[storage_mapper("produceRewardsEnabled")]
     fn produce_rewards_enabled(&self) -> SingleValueMapper<bool>;

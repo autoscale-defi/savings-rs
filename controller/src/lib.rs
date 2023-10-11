@@ -4,10 +4,11 @@ use token::{SavingsTokenAttributes, UnbondTokenAttributes};
 
 multiversx_sc::imports!();
 
+pub mod rewards;
 pub mod token;
 
 #[multiversx_sc::contract]
-pub trait ControllerContract: token::TokenModule {
+pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
     #[init]
     fn init(&self, usdc_token_id: TokenIdentifier) {
         self.usdc_token().set_if_empty(usdc_token_id);
@@ -30,11 +31,10 @@ pub trait ControllerContract: token::TokenModule {
         self.savings_token()
             .require_all_same_token(&additional_payments);
 
-        let last_bloc = self.blockchain().get_block_nonce();
         let attributes = SavingsTokenAttributes {
-            reward_per_share: self.reward_per_share().get(),
+            initial_rewards_per_share: self.reward_per_share().get(),
             accumulated_rewards: BigUint::zero(),
-            last_bloc,
+            total_shares: usdc_payment.amount.clone(),
         };
 
         let new_savings_token = self.create_savings_token_by_merging(
@@ -59,10 +59,11 @@ pub trait ControllerContract: token::TokenModule {
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> EsdtTokenPayment<Self::Api> {
         // merge les attributs
+        // todo
         let merged_attributes = SavingsTokenAttributes {
-            reward_per_share: BigUint::zero(),    // todo
-            accumulated_rewards: BigUint::zero(), //todo
-            last_bloc: 0,                         // todo
+            initial_rewards_per_share: BigUint::zero(), // todo
+            accumulated_rewards: BigUint::zero(),       //todo
+            total_shares: BigUint::from(0u64),          // todo
         };
 
         // additionner la nouvelle position + les anciennes

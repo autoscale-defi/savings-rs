@@ -16,11 +16,10 @@ pub trait ControllerContract:
     token::TokenModule + rewards::RewardsModule + phase::PhaseModule
 {
     #[init]
-    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase, deposit_fees_percentage: u64) {
+    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase) {
         self.usdc_token().set_if_empty(usdc_token_id);
         self.phase().set_if_empty(phase);
-        self.deposit_fees_percentage_on_depletion()
-            .set_if_empty(deposit_fees_percentage);
+
     }
 
     #[payable("*")]
@@ -38,14 +37,11 @@ pub trait ControllerContract:
         self.savings_token()
             .require_all_same_token(&additional_payments);
 
-        let usdc_amount_to_deposit = match self.get_phase() {
-            Phase::Accumulation => usdc_payment.amount.clone(),
-            Phase::Depletion => {
-                let fees = usdc_payment.amount.clone()
-                    * self.deposit_fees_percentage_on_depletion().get()
-                    / PERCENTAGE_DIVIDER;
-                // TODO: send fees wherever they should go
-                usdc_payment.amount.clone() - fees
+        let phase = self.get_phase();
+
+        let usdc_amount_to_deposit = match phase {
+            Phase::Accumulation => self.charge_and_send_deposit_fees(phase, &usdc_payment.amount),
+            Phase::Depletion => {  self.charge_and_send_deposit_fees(phase, &usdc_payment.amount)
             }
         };
 
@@ -60,6 +56,19 @@ pub trait ControllerContract:
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);
 
         new_savings_token
+    }
+
+    // maybe we can do this for the deposit & the withdraw ? Do we add if its for the deposit or the withdraw in args ?
+    fn charge_and_send_deposit_fees(&self, phase: Phase, amount: &BigUint) -> BigUint  {
+        let fees_percentage = self.deposit_fees_percentage(phase).get();
+
+        if fees_percentage == 0 {
+            return amount.clone();
+        }
+        let fees_amount = amount * fees_percentage / PERCENTAGE_DIVIDER;
+        // send the fees somewhere 
+
+        amount - &fees_amount
     }
 
     fn create_savings_token_by_merging(

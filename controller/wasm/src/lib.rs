@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           15
+// Endpoints:                           22
 // Async Callback (empty):               1
-// Total number of exported functions:  17
+// Total number of exported functions:  24
 
 #![no_std]
 
@@ -37,6 +37,13 @@ multiversx_sc_wasm_adapter::endpoints! {
         getSavingsTokenSupply => savings_token_supply
         registerSavingsToken => register_savings_token
         registerUnbondToken => register_unbond_token
+        calculateRewardsForGivenPosition => calculate_rewards
+        setRewardsPerSharePerBlock => set_rewards_per_share_per_block
+        setProduceRewardsEnabled => set_produce_rewards_enabled
+        isProduceRewardsEnabled => produce_rewards_enabled
+        getLastUpdateBlockNonce => last_update_block_nonce
+        getRewardsPerShare => rewards_per_share
+        getRewardsPerSharePerBlock => rewards_per_share_per_block
     )
 }
 

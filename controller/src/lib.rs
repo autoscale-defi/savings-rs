@@ -1,19 +1,19 @@
 #![no_std]
 
-use token::{SavingsTokenAttributes, UnbondTokenAttributes};
+use token::UnbondTokenAttributes;
 
 multiversx_sc::imports!();
 
+pub mod rewards;
 pub mod token;
 
 #[multiversx_sc::contract]
-pub trait ControllerContract: token::TokenModule {
+pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
     #[init]
     fn init(&self, usdc_token_id: TokenIdentifier) {
         self.usdc_token().set_if_empty(usdc_token_id);
     }
 
-    // ROBIN
     #[payable("*")]
     #[endpoint]
     fn deposit(&self) -> EsdtTokenPayment<Self::Api> {
@@ -30,18 +30,9 @@ pub trait ControllerContract: token::TokenModule {
         self.savings_token()
             .require_all_same_token(&additional_payments);
 
-        let last_bloc = self.blockchain().get_block_nonce();
-        let attributes = SavingsTokenAttributes {
-            reward_per_share: self.reward_per_share().get(),
-            accumulated_rewards: BigUint::zero(),
-            last_bloc,
-        };
+        let new_savings_token =
+            self.create_savings_token_by_merging(usdc_payment.amount.clone(), &additional_payments);
 
-        let new_savings_token = self.create_savings_token_by_merging(
-            usdc_payment.amount.clone(),
-            &attributes,
-            &additional_payments,
-        );
         self.liquidity_reserve()
             .update(|x| *x += usdc_payment.amount);
 
@@ -55,41 +46,20 @@ pub trait ControllerContract: token::TokenModule {
     fn create_savings_token_by_merging(
         &self,
         amount: BigUint,
-        _attributes: &SavingsTokenAttributes<Self::Api>,
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> EsdtTokenPayment<Self::Api> {
-        // merge les attributs
-        let merged_attributes = SavingsTokenAttributes {
-            reward_per_share: BigUint::zero(),    // todo
-            accumulated_rewards: BigUint::zero(), //todo
-            last_bloc: 0,                         // todo
-        };
+        let mut merged_attributes = self.merge_savings_tokens(payments);
+        merged_attributes.total_shares += amount.clone();
 
-        // additionner la nouvelle position + les anciennes
-        // burn les anciennes positions
-        // baisser la supply total des savings token
-        // est-ce que je mettrai pas un IF pour la loop et je rentre dedans que si j'ai besoin de merge ? si la len des paiements est de 0 je rentre pas
-        let mut new_amount = amount;
-        for payment in payments.iter() {
-            new_amount += payment.amount.clone();
+        self.burn_savings_tokens(&payments);
 
-            self.savings_token()
-                .nft_burn(payment.token_nonce, &payment.amount);
-            self.savings_token_supply().update(|x| *x -= payment.amount);
-        }
-
-        // creer le nouveau savings token
         let new_savings_token = self
             .savings_token()
-            .nft_create(new_amount.clone(), &merged_attributes);
-
-        self.savings_token_supply().update(|x| *x += new_amount);
-        // je dois merge seulement si il y a des payments - pas de merge sinon
+            .nft_create(merged_attributes.total_shares.clone(), &merged_attributes);
 
         new_savings_token
     }
 
-    // ROBIN
     #[payable("*")]
     #[endpoint]
     fn withdraw(&self) -> ManagedVec<EsdtTokenPayment> {
@@ -98,8 +68,11 @@ pub trait ControllerContract: token::TokenModule {
             .require_same_token(&payment.token_identifier);
         require!(payment.amount > 0, "Payment amount cannot be zero");
 
-        // get & send rewards to user
-        let rewards = BigUint::zero(); // est-ce que je get que le montant des rewards et je dois build le paiement ou alors il me renvoi le paiement ?
+        // Do we accept multiple payments or not?
+        // create a managedvec for now
+        let mut savings_tokens = ManagedVec::new();
+        savings_tokens.push(payment.clone());
+        let rewards = self.merge_savings_tokens(&savings_tokens);
 
         let current_epoch = self.blockchain().get_block_epoch();
         let min_unbond_epochs = self.min_unbond_epochs().get();
@@ -111,13 +84,15 @@ pub trait ControllerContract: token::TokenModule {
             .unbond_token()
             .nft_create(payment.amount.clone(), &unbond_token_attr);
 
-        // burn savings token
-        self.savings_token()
-            .nft_burn(payment.token_nonce, &payment.amount);
+        self.burn_savings_tokens(&savings_tokens);
 
         let mut output_payments = ManagedVec::new();
 
-        let rewards_payment = EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, rewards);
+        let rewards_payment = EsdtTokenPayment::new(
+            self.usdc_token().get_token_id(),
+            0,
+            rewards.accumulated_rewards,
+        );
         output_payments.push(rewards_payment);
         output_payments.push(unbond_token_payment);
 
@@ -160,9 +135,6 @@ pub trait ControllerContract: token::TokenModule {
     fn set_platforms_distribution(&self) {
         // quand on change la répartition alors on va withdraw + redeposit all dans cette fonction
     }
-
-    // ROBIN
-    fn merge_position(&self) {}
 
     // NICOLAS
     #[only_owner]

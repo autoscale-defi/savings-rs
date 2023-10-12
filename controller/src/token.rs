@@ -3,14 +3,14 @@ multiversx_sc::derive_imports!();
 
 #[derive(TypeAbi, TopEncode, TopDecode)]
 pub struct SavingsTokenAttributes<M: ManagedTypeApi> {
-    pub reward_per_share: BigUint<M>,
+    pub initial_rewards_per_share: BigUint<M>,
     pub accumulated_rewards: BigUint<M>,
-    pub last_bloc: u64
+    pub total_shares: BigUint<M>,
 }
 
 #[derive(TypeAbi, TopEncode, TopDecode)]
 pub struct UnbondTokenAttributes {
-    pub unlock_epoch: u64
+    pub unlock_epoch: u64,
 }
 
 #[multiversx_sc::module]
@@ -53,6 +53,13 @@ pub trait TokenModule {
             num_decimals,
             None,
         );
+    }
+
+    fn burn_savings_tokens(&self, tokens: &ManagedVec<EsdtTokenPayment<Self::Api>>) {
+        for token in tokens.iter() {
+            self.savings_token()
+                .nft_burn(token.token_nonce, &token.amount);
+        }
     }
 
     #[storage_mapper("savingsTokenId")]

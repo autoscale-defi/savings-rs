@@ -1,19 +1,20 @@
 #![no_std]
 
 use phase::Phase;
-use token::UnbondTokenAttributes;
+use token::{SavingsTokenAttributes, UnbondTokenAttributes};
 
 multiversx_sc::imports!();
 
 pub mod phase;
 pub mod rewards;
 pub mod token;
+pub mod vault;
 
 const PERCENTAGE_DIVIDER: u64 = 10000;
 
 #[multiversx_sc::contract]
 pub trait ControllerContract:
-    token::TokenModule + rewards::RewardsModule + phase::PhaseModule
+    token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault::VaultModule
 {
     #[init]
     fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase) {
@@ -82,16 +83,11 @@ pub trait ControllerContract:
     #[payable("*")]
     #[endpoint]
     fn withdraw(&self) -> ManagedVec<EsdtTokenPayment> {
-        let payment = self.call_value().single_esdt();
-        self.savings_token()
-            .require_same_token(&payment.token_identifier);
-        require!(payment.amount > 0, "Payment amount cannot be zero");
+        let payments = self.call_value().all_esdt_transfers();
+        self.savings_token().require_all_same_token(&payments);
 
-        // Do we accept multiple payments or not?
-        // create a managedvec for now
-        let mut savings_tokens = ManagedVec::new();
-        savings_tokens.push(payment.clone());
-        let rewards = self.merge_savings_tokens(&savings_tokens);
+        let rewards = self.merge_savings_tokens(&payments);
+        require!(rewards.total_shares > 0, "Payment amount cannot be zero");
 
         let current_epoch = self.blockchain().get_block_epoch();
         let min_unbond_epochs = self.min_unbond_epochs().get();
@@ -101,9 +97,9 @@ pub trait ControllerContract:
         };
         let unbond_token_payment = self
             .unbond_token()
-            .nft_create(payment.amount.clone(), &unbond_token_attr);
+            .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
 
-        self.burn_savings_tokens(&savings_tokens);
+        self.burn_savings_tokens(&payments);
 
         let mut output_payments = ManagedVec::new();
 
@@ -121,19 +117,65 @@ pub trait ControllerContract:
         output_payments
     }
 
-    // ROBIN
+    #[payable("*")]
     #[endpoint]
     fn unbond(&self) {
-        // vérifier que liquidity reserve >= montant a envoyer
-        // burn le token d'unbond
-        // envoyer les fonds à l'user
-        // decrease la liquidity reserve
+        let payment = self.call_value().single_esdt();
+        self.unbond_token()
+            .require_same_token(&payment.token_identifier);
+        require!(payment.amount > 0, "Payment amount cannot be zero");
+
+        let unbond_token_attr: UnbondTokenAttributes = self
+            .unbond_token()
+            .get_token_attributes(payment.token_nonce);
+        require!(
+            self.blockchain().get_block_epoch() >= unbond_token_attr.unlock_epoch,
+            "Cannot unbond before unlock epoch"
+        );
+        require!(
+            self.liquidity_reserve().get() >= payment.amount,
+            "Not enough liquidity"
+        );
+
+        self.unbond_token()
+            .nft_burn(payment.token_nonce, &payment.amount);
+        self.send().direct_esdt(
+            &self.blockchain().get_caller(),
+            self.usdc_token().get_token_id_ref(),
+            0,
+            &payment.amount,
+        );
+        self.liquidity_reserve()
+            .update(|x| *x -= payment.amount.clone());
     }
 
-    // ROBIN
     #[payable("*")]
     #[endpoint(claimRewards)]
-    fn claim_rewards(&self) {}
+    fn claim_rewards(&self) {
+        let payments = self.call_value().all_esdt_transfers();
+        self.savings_token().require_all_same_token(&payments);
+
+        let rewards = self.merge_savings_tokens(&payments);
+        require!(rewards.total_shares > 0, "Payment amount cannot be zero");
+
+        let new_savings_token_attr = SavingsTokenAttributes {
+            initial_rewards_per_share: self.rewards_per_share().get(),
+            accumulated_rewards: BigUint::zero(),
+            total_shares: rewards.total_shares.clone(),
+        };
+        let new_savings_token = self
+            .savings_token()
+            .nft_create(rewards.total_shares.clone(), &new_savings_token_attr);
+
+        self.burn_savings_tokens(&payments);
+
+        let caller = self.blockchain().get_caller();
+        // where do we check if there is enough rewards in the vault?
+        // tx will fail anyways but a require! could be nice (in the vault?)
+        self.send_rewards(caller.clone(), rewards.accumulated_rewards);
+        self.send()
+            .direct_non_zero_esdt_payment(&caller, &new_savings_token);
+    }
 
     // NICOLAS
     #[endpoint(claimControllerRewards)]

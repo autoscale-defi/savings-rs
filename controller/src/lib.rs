@@ -1,17 +1,26 @@
 #![no_std]
 
+use phase::Phase;
 use token::UnbondTokenAttributes;
 
 multiversx_sc::imports!();
 
+pub mod phase;
 pub mod rewards;
 pub mod token;
 
+const PERCENTAGE_DIVIDER: u64 = 10000;
+
 #[multiversx_sc::contract]
-pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
+pub trait ControllerContract:
+    token::TokenModule + rewards::RewardsModule + phase::PhaseModule
+{
     #[init]
-    fn init(&self, usdc_token_id: TokenIdentifier) {
+    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase, deposit_fees_percentage: u64) {
         self.usdc_token().set_if_empty(usdc_token_id);
+        self.phase().set_if_empty(phase);
+        self.deposit_fees_percentage_on_depletion()
+            .set_if_empty(deposit_fees_percentage);
     }
 
     #[payable("*")]
@@ -19,7 +28,6 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
     fn deposit(&self) -> EsdtTokenPayment<Self::Api> {
         let payments = self.call_value().all_esdt_transfers();
 
-        // add fees
         let usdc_payment = payments
             .try_get(0)
             .unwrap_or_else(|| sc_panic!("empty payments"));
@@ -30,11 +38,22 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
         self.savings_token()
             .require_all_same_token(&additional_payments);
 
+        let usdc_amount_to_deposit = match self.get_phase() {
+            Phase::Accumulation => usdc_payment.amount.clone(),
+            Phase::Depletion => {
+                let fees = usdc_payment.amount.clone()
+                    * self.deposit_fees_percentage_on_depletion().get()
+                    / PERCENTAGE_DIVIDER;
+                // TODO: send fees wherever they should go
+                usdc_payment.amount.clone() - fees
+            }
+        };
+
         let new_savings_token =
-            self.create_savings_token_by_merging(usdc_payment.amount.clone(), &additional_payments);
+            self.create_savings_token_by_merging(&usdc_amount_to_deposit, &additional_payments);
 
         self.liquidity_reserve()
-            .update(|x| *x += usdc_payment.amount);
+            .update(|x| *x += usdc_amount_to_deposit);
 
         let caller = self.blockchain().get_caller();
         self.send()
@@ -45,7 +64,7 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
 
     fn create_savings_token_by_merging(
         &self,
-        amount: BigUint,
+        amount: &BigUint,
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> EsdtTokenPayment<Self::Api> {
         let mut merged_attributes = self.merge_savings_tokens(payments);

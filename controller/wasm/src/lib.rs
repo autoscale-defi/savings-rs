@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           22
+// Endpoints:                           25
 // Async Callback (empty):               1
-// Total number of exported functions:  24
+// Total number of exported functions:  27
 
 #![no_std]
 
@@ -44,6 +44,9 @@ multiversx_sc_wasm_adapter::endpoints! {
         getLastUpdateBlockNonce => last_update_block_nonce
         getRewardsPerShare => rewards_per_share
         getRewardsPerSharePerBlock => rewards_per_share_per_block
+        getPhase => get_phase
+        setPhase => set_phase
+        getDepositFeesPercentageOnDepletion => deposit_fees_percentage_on_depletion
     )
 }
 

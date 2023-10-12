@@ -31,7 +31,7 @@ pub trait VaultContract {
 
         self.send().direct_esdt(
             &destination,
-            &self.usdc_token_id().get_token_id_ref(),
+            &self.usdc_token_id().get_token_id(),
             0,
             &amount,
         );

@@ -2,5 +2,7 @@
 members = [
     "platforms/ashswap",
     "controller",
-    "controller/meta"
+    "controller/meta",
+    "vault",
+    "vault/meta"
 ]

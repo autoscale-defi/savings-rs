@@ -1,17 +1,24 @@
 #![no_std]
 
+use phase::Phase;
 use token::UnbondTokenAttributes;
 
 multiversx_sc::imports!();
 
+pub mod phase;
 pub mod rewards;
 pub mod token;
 
+const PERCENTAGE_DIVIDER: u64 = 10000;
+
 #[multiversx_sc::contract]
-pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
+pub trait ControllerContract:
+    token::TokenModule + rewards::RewardsModule + phase::PhaseModule
+{
     #[init]
-    fn init(&self, usdc_token_id: TokenIdentifier) {
+    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase) {
         self.usdc_token().set_if_empty(usdc_token_id);
+        self.phase().set_if_empty(phase);
     }
 
     #[payable("*")]
@@ -19,7 +26,6 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
     fn deposit(&self) -> EsdtTokenPayment<Self::Api> {
         let payments = self.call_value().all_esdt_transfers();
 
-        // add fees
         let usdc_payment = payments
             .try_get(0)
             .unwrap_or_else(|| sc_panic!("empty payments"));
@@ -30,11 +36,14 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
         self.savings_token()
             .require_all_same_token(&additional_payments);
 
+        let phase = self.get_phase();
+        let usdc_amount_to_deposit = self.charge_and_send_deposit_fees(phase, &usdc_payment.amount);
+
         let new_savings_token =
-            self.create_savings_token_by_merging(usdc_payment.amount.clone(), &additional_payments);
+            self.create_savings_token_by_merging(&usdc_amount_to_deposit, &additional_payments);
 
         self.liquidity_reserve()
-            .update(|x| *x += usdc_payment.amount);
+            .update(|x| *x += usdc_amount_to_deposit);
 
         let caller = self.blockchain().get_caller();
         self.send()
@@ -43,21 +52,31 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
         new_savings_token
     }
 
+    // maybe we can do this for the deposit & the withdraw ? Do we add if its for the deposit or the withdraw in args ?
+    fn charge_and_send_deposit_fees(&self, phase: Phase, amount: &BigUint) -> BigUint {
+        let fees_percentage = self.deposit_fees_percentage(phase).get();
+
+        if fees_percentage == 0 {
+            return amount.clone();
+        }
+        let fees_amount = amount * fees_percentage / PERCENTAGE_DIVIDER;
+        // send the fees somewhere
+
+        amount - &fees_amount
+    }
+
     fn create_savings_token_by_merging(
         &self,
-        amount: BigUint,
+        amount: &BigUint,
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> EsdtTokenPayment<Self::Api> {
         let mut merged_attributes = self.merge_savings_tokens(payments);
         merged_attributes.total_shares += amount.clone();
 
-        self.burn_savings_tokens(&payments);
+        self.burn_savings_tokens(payments);
 
-        let new_savings_token = self
-            .savings_token()
-            .nft_create(merged_attributes.total_shares.clone(), &merged_attributes);
-
-        new_savings_token
+        self.savings_token()
+            .nft_create(merged_attributes.total_shares.clone(), &merged_attributes)
     }
 
     #[payable("*")]
@@ -156,7 +175,7 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
 
     #[endpoint(setMinUnbondEpochs)]
     fn set_min_unbond_epochs(&self, min_unbond_epochs: u64) {
-        self.min_unbond_epochs().set(&min_unbond_epochs);
+        self.min_unbond_epochs().set(min_unbond_epochs);
     }
 
     #[storage_mapper("liquidityReserve")]

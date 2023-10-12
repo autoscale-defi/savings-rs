@@ -21,20 +21,19 @@ pub trait PhaseModule {
         self.phase().set(phase);
     }
 
-    // maybe one function setFees with deposit and phase is better? 
+    // maybe one function setFees with deposit and phase is better?
 
-    // maybe also one mapper ? we can add in the args if its for the deposit or withdraw 
+    // maybe also one mapper ? we can add in the args if its for the deposit or withdraw
     #[only_owner]
     #[endpoint(setDepositFees)]
     fn set_deposit_fees(&self, phase: Phase, fees_perc: u64) {
-        self.deposit_fees_percentage(phase).set(&fees_perc);
+        self.deposit_fees_percentage(phase).set(fees_perc);
     }
 
     #[only_owner]
     #[endpoint(setWithdrawFees)]
     fn set_withdraw_fees(&self, phase: Phase, fees_perc: u64) {
-        self.withdraw_fees_percentage(phase).set(&fees_perc);
-
+        self.withdraw_fees_percentage(phase).set(fees_perc);
     }
 
     #[storage_mapper("phase")]

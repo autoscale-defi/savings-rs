@@ -41,8 +41,7 @@ pub trait ControllerContract:
 
         let usdc_amount_to_deposit = match phase {
             Phase::Accumulation => self.charge_and_send_deposit_fees(phase, &usdc_payment.amount),
-            Phase::Depletion => {  self.charge_and_send_deposit_fees(phase, &usdc_payment.amount)
-            }
+            Phase::Depletion => self.charge_and_send_deposit_fees(phase, &usdc_payment.amount)
         };
 
         let new_savings_token =

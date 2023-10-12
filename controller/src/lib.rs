@@ -48,7 +48,7 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
         amount: BigUint,
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> EsdtTokenPayment<Self::Api> {
-        let mut merged_attributes = self.merge_positions(payments);
+        let mut merged_attributes = self.merge_savings_tokens(payments);
         merged_attributes.total_shares += amount.clone();
 
         self.burn_savings_tokens(&payments);
@@ -70,9 +70,9 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
 
         // Do we accept multiple payments or not?
         // create a managedvec for now
-        let mut positions = ManagedVec::new();
-        positions.push(payment.clone());
-        let rewards = self.merge_positions(&positions);
+        let mut savings_tokens = ManagedVec::new();
+        savings_tokens.push(payment.clone());
+        let rewards = self.merge_savings_tokens(&savings_tokens);
 
         let current_epoch = self.blockchain().get_block_epoch();
         let min_unbond_epochs = self.min_unbond_epochs().get();
@@ -84,7 +84,7 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
             .unbond_token()
             .nft_create(payment.amount.clone(), &unbond_token_attr);
 
-        self.burn_savings_tokens(&positions);
+        self.burn_savings_tokens(&savings_tokens);
 
         let mut output_payments = ManagedVec::new();
 
@@ -135,9 +135,6 @@ pub trait ControllerContract: token::TokenModule + rewards::RewardsModule {
     fn set_platforms_distribution(&self) {
         // quand on change la répartition alors on va withdraw + redeposit all dans cette fonction
     }
-
-    // ROBIN
-    fn merge_position(&self) {}
 
     // NICOLAS
     #[only_owner]

@@ -2,9 +2,10 @@ multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
 use crate::token::SavingsTokenAttributes;
+use super::token;
 
 #[multiversx_sc::module]
-pub trait RewardsModule {
+pub trait RewardsModule: token::TokenModule {
     /// Updates the rewards per share based on the current block number and the last time the rewards were updated.
     ///
     /// We use a static rewards per share per block and not a dynamic one based on the supply of the savings tokens (shares).
@@ -19,45 +20,45 @@ pub trait RewardsModule {
     fn update_rewards_per_share(&self) {
         require!(self.produce_rewards_enabled().get(), "Rewards are disabled");
 
-        let last_rewards_block_nonce = self.last_rewards_block_nonce().get();
+        let last_update_block_nonce = self.last_update_block_nonce().get();
         let current_block_nonce = self.blockchain().get_block_nonce();
-        let blocks_since_last_rewards = current_block_nonce - last_rewards_block_nonce;
-        if blocks_since_last_rewards == 0 {
+        let blocks_since_last_update = current_block_nonce - last_update_block_nonce;
+        if blocks_since_last_update == 0 {
             return;
         }
 
-        let computed_rewards_per_share_since_last_rewards = self
+        let computed_rewards_per_share_since_last_update = self
             .rewards_per_share_per_block()
             .get()
-            .mul(blocks_since_last_rewards);
+            .mul(blocks_since_last_update);
 
         self.rewards_per_share().update(|x| {
-            *x += computed_rewards_per_share_since_last_rewards;
+            *x += computed_rewards_per_share_since_last_update;
         });
 
-        self.last_rewards_block_nonce().set(current_block_nonce);
+        self.last_update_block_nonce().set(current_block_nonce);
     }
 
-    /// Computes the rewards for a given position.
+    /// Calculate the rewards for a given position.
     /// It sums up the rewards and the accumulated rewards based on the proportion of the shares given.
     ///
     /// This function has to be called when:
     /// - you want to know off-chain the rewards of a given position
     /// - A user claims his rewards
     /// - We merge multiple positions into one (the sum of the old positions ends up in the accumulated rewards of the new position)
-    #[view(computeRewardsForGivenPosition)]
-    fn compute_rewards(
+    #[view(calculateRewardsForGivenPosition)]
+    fn calculate_rewards(
         &self,
-        shares_given: &BigUint,
-        position_attributes: &SavingsTokenAttributes<Self::Api>,
+        savings_token_amount: &BigUint,
+        attributes: &SavingsTokenAttributes<Self::Api>,
     ) -> BigUint {
         self.update_rewards_per_share();
 
-        let mut rewards = shares_given
-            * &(self.rewards_per_share().get() - &position_attributes.initial_rewards_per_share);
+        let mut rewards = savings_token_amount
+            * &(self.rewards_per_share().get() - &attributes.initial_rewards_per_share);
 
-        rewards += &position_attributes.accumulated_rewards * shares_given
-            / &position_attributes.total_shares;
+        rewards += &attributes.accumulated_rewards * savings_token_amount
+            / &attributes.total_shares;
 
         rewards
     }
@@ -84,7 +85,7 @@ pub trait RewardsModule {
     /// - burn the old positions
     /// - Mint the new position returned by this function
     /// - Send the new position to the user
-    fn merge_positions(
+    fn merge_savings_tokens(
         &self,
         payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
     ) -> SavingsTokenAttributes<Self::Api> {
@@ -92,17 +93,11 @@ pub trait RewardsModule {
         let mut new_total_shares = BigUint::zero();
 
         for payment in payments.into_iter() {
-            // verify the token id ?? I think it will always be done before
-            let position_attributes: SavingsTokenAttributes<Self::Api> = self
-                .blockchain()
-                .get_esdt_token_data(
-                    &self.blockchain().get_sc_address(),
-                    &payment.token_identifier,
-                    payment.token_nonce,
-                )
-                .decode_attributes();
+            let savings_token_attr: SavingsTokenAttributes<Self::Api> = self
+                .savings_token()
+                .get_token_attributes(payment.token_nonce);
 
-            new_accumulated_rewards += self.compute_rewards(&payment.amount, &position_attributes);
+            new_accumulated_rewards += self.calculate_rewards(&payment.amount, &savings_token_attr);
             new_total_shares += payment.amount;
         }
 
@@ -132,9 +127,9 @@ pub trait RewardsModule {
     #[storage_mapper("produceRewardsEnabled")]
     fn produce_rewards_enabled(&self) -> SingleValueMapper<bool>;
 
-    #[view(getLastRewardsBlockNonce)]
-    #[storage_mapper("lastRewardsBlockNonce")]
-    fn last_rewards_block_nonce(&self) -> SingleValueMapper<u64>;
+    #[view(getLastUpdateBlockNonce)]
+    #[storage_mapper("lastUpdateBlockNonce")]
+    fn last_update_block_nonce(&self) -> SingleValueMapper<u64>;
 
     #[view(getRewardsPerShare)]
     #[storage_mapper("rewardsPerShare")]

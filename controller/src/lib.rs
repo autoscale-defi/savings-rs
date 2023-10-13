@@ -1,10 +1,12 @@
 #![no_std]
 
+use models::ControllerParametersDTO;
 use phase::Phase;
 use token::{SavingsTokenAttributes, UnbondTokenAttributes};
 
 multiversx_sc::imports!();
 
+pub mod models;
 pub mod phase;
 pub mod rewards;
 pub mod token;
@@ -197,42 +199,20 @@ pub trait ControllerContract:
         // should return output payments? but same as withdraw, should we first return the payment rewards from the vault?
     }
 
-    // NICOLAS
     #[endpoint(claimControllerRewards)]
     fn claim_controller_rewards(&self) {}
 
-    // NICOLAS
     #[endpoint]
     fn rebalance(&self) {}
 
-    // NICOLAS
     #[only_owner]
     #[endpoint(addPlatform)]
     fn add_platform(&self) {}
 
-    // NICOLAS
     #[only_owner]
     #[endpoint(setPlatformDistribution)]
     fn set_platforms_distribution(&self) {
         // quand on change la répartition alors on va withdraw + redeposit all dans cette fonction
-    }
-
-    // NICOLAS
-    #[only_owner]
-    #[endpoint(setControllerState)]
-    fn set_controller_state(&self) {}
-
-    // NICOLAS
-    #[only_owner]
-    #[endpoint(setFeesDistribution)]
-    fn set_fees_distribution(&self) {}
-
-    // DUOQ
-    #[only_owner]
-    #[endpoint(setRewardsPerShare)]
-    fn set_reward_per_share(&self) {
-
-        // est-ce qucalculer ? 'on a besoin du savings_token_supply pour le
     }
 
     #[endpoint(setMinUnbondEpochs)]
@@ -240,18 +220,27 @@ pub trait ControllerContract:
         self.min_unbond_epochs().set(min_unbond_epochs);
     }
 
+    #[view(getControllerParameters)]
+    fn get_controller_parameters(&self) -> ControllerParametersDTO<Self::Api> {
+        let phase = self.get_phase();
+
+        ControllerParametersDTO {
+            phase: phase.clone(),
+            min_unbond_epochs: self.min_unbond_epochs().get(),
+            force_unbond_fees_percentage: self.force_unbond_fees_percentage().get(),
+            deposit_fees_percentage: self.deposit_fees_percentage(phase).get(),
+            rewards_per_share_per_block: self.rewards_per_share_per_block().get(),
+            usdc_token_id: self.usdc_token().get_token_id(),
+            savings_token_id: self.savings_token().get_token_id(),
+            unbond_token_id: self.unbond_token().get_token_id(),
+        }
+    }
+
     #[storage_mapper("liquidityReserve")]
     fn liquidity_reserve(&self) -> SingleValueMapper<BigUint>;
 
     #[storage_mapper("minUnbondEpochs")]
     fn min_unbond_epochs(&self) -> SingleValueMapper<u64>;
-
-    #[view(getSavingsTokenSupply)]
-    #[storage_mapper("savingsTokenSupply")]
-    fn savings_token_supply(&self) -> SingleValueMapper<BigUint>;
-
-    #[storage_mapper("rewardPerShare")]
-    fn reward_per_share(&self) -> SingleValueMapper<BigUint>;
 
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;

@@ -84,10 +84,7 @@ pub trait ControllerContract:
 
     #[payable("*")]
     #[endpoint]
-    fn withdraw(
-        &self,
-        opt_force_unbond_early: OptionalValue<bool>,
-    ) -> ManagedVec<EsdtTokenPayment> {
+    fn withdraw(&self, opt_force_withdraw: OptionalValue<bool>) -> ManagedVec<EsdtTokenPayment> {
         let payments = self.call_value().all_esdt_transfers();
         self.savings_token().require_all_same_token(&payments);
 
@@ -97,11 +94,11 @@ pub trait ControllerContract:
         let current_epoch = self.blockchain().get_block_epoch();
         let min_unbond_epochs = self.min_unbond_epochs().get();
 
-        let force_unbond_early = opt_force_unbond_early.into_option().unwrap_or(false);
+        let force_withdraw = opt_force_withdraw.into_option().unwrap_or(false);
 
         let mut output_payments = ManagedVec::new();
 
-        if force_unbond_early {
+        if force_withdraw {
             let fees_percentage = self.force_unbond_fees_percentage().get();
             let fees_amount = rewards.total_shares.clone() * fees_percentage / PERCENTAGE_DIVIDER;
             let savings_token_without_fees = rewards.total_shares.clone() - fees_amount;

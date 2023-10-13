@@ -8,13 +8,13 @@ multiversx_sc::imports!();
 pub mod phase;
 pub mod rewards;
 pub mod token;
-pub mod vault;
+pub mod vault_proxy;
 
 const PERCENTAGE_DIVIDER: u64 = 10000;
 
 #[multiversx_sc::contract]
 pub trait ControllerContract:
-    token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault::VaultModule
+    token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault_proxy::VaultModule
 {
     #[init]
     fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase) {
@@ -82,7 +82,10 @@ pub trait ControllerContract:
 
     #[payable("*")]
     #[endpoint]
-    fn withdraw(&self) -> ManagedVec<EsdtTokenPayment> {
+    fn withdraw(
+        &self,
+        opt_force_unbond_early: OptionalValue<bool>,
+    ) -> ManagedVec<EsdtTokenPayment> {
         let payments = self.call_value().all_esdt_transfers();
         self.savings_token().require_all_same_token(&payments);
 
@@ -92,34 +95,47 @@ pub trait ControllerContract:
         let current_epoch = self.blockchain().get_block_epoch();
         let min_unbond_epochs = self.min_unbond_epochs().get();
 
-        let unbond_token_attr = UnbondTokenAttributes {
-            unlock_epoch: current_epoch + min_unbond_epochs,
-        };
-        let unbond_token_payment = self
-            .unbond_token()
-            .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
-
-        self.burn_savings_tokens(&payments);
+        let force_unbond_early = opt_force_unbond_early.into_option().unwrap_or(false);
 
         let mut output_payments = ManagedVec::new();
 
-        let rewards_payment = EsdtTokenPayment::new(
-            self.usdc_token().get_token_id(),
-            0,
-            rewards.accumulated_rewards,
-        );
-        output_payments.push(rewards_payment);
-        output_payments.push(unbond_token_payment);
+        if force_unbond_early {
+            let fees_percentage = self.force_unbond_fees_percentage().get();
+            let fees_amount = rewards.total_shares.clone() * fees_percentage / PERCENTAGE_DIVIDER;
+            let savings_token_without_fees = rewards.total_shares.clone() - fees_amount;
 
+            // send the fees somewhere
+
+            output_payments.push(EsdtTokenPayment::new(
+                self.usdc_token().get_token_id(),
+                0,
+                savings_token_without_fees,
+            ));
+        } else {
+            let unbond_token_attr = UnbondTokenAttributes {
+                unlock_epoch: current_epoch + min_unbond_epochs,
+            };
+            let unbond_token_payment = self
+                .unbond_token()
+                .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
+
+            output_payments.push(unbond_token_payment);
+        }
+
+        // where do we check if there is enough rewards in the vault?
+        // tx will fail anyways but a require! could be nice (in the vault?)
+        self.send_rewards(self.blockchain().get_caller(), rewards.accumulated_rewards);
+        self.burn_savings_tokens(&payments);
         let caller = self.blockchain().get_caller();
         self.send().direct_multi(&caller, &output_payments);
 
+        // Rewards are not in the output_payments, maybe we should return it from the vault endpoint first?
         output_payments
     }
 
     #[payable("*")]
     #[endpoint]
-    fn unbond(&self) {
+    fn unbond(&self) -> EsdtTokenPayment {
         let payment = self.call_value().single_esdt();
         self.unbond_token()
             .require_same_token(&payment.token_identifier);
@@ -139,14 +155,16 @@ pub trait ControllerContract:
 
         self.unbond_token()
             .nft_burn(payment.token_nonce, &payment.amount);
-        self.send().direct_esdt(
-            &self.blockchain().get_caller(),
-            self.usdc_token().get_token_id_ref(),
-            0,
-            &payment.amount,
-        );
         self.liquidity_reserve()
             .update(|x| *x -= payment.amount.clone());
+
+        let output_payment =
+            EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, payment.amount.clone());
+
+        self.send()
+            .direct_non_zero_esdt_payment(&self.blockchain().get_caller(), &output_payment);
+
+        output_payment
     }
 
     #[payable("*")]
@@ -175,6 +193,8 @@ pub trait ControllerContract:
         self.send_rewards(caller.clone(), rewards.accumulated_rewards);
         self.send()
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);
+
+        // should return output payments? but same as withdraw, should we first return the payment rewards from the vault?
     }
 
     // NICOLAS
@@ -235,4 +255,8 @@ pub trait ControllerContract:
 
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
+
+    #[view(getForceUnbondFeesPercentage)]
+    #[storage_mapper("forceUnbondFeesPercentage")]
+    fn force_unbond_fees_percentage(&self) -> SingleValueMapper<u64>;
 }

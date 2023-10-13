@@ -99,7 +99,7 @@ pub trait ControllerContract:
         let mut output_payments = ManagedVec::new();
 
         if force_withdraw {
-            let fees_percentage = self.force_unbond_fees_percentage().get();
+            let fees_percentage = self.force_withdraw_fees_percentage().get();
             let fees_amount = rewards.total_shares.clone() * fees_percentage / PERCENTAGE_DIVIDER;
             let savings_token_without_fees = rewards.total_shares.clone() - fees_amount;
 
@@ -224,7 +224,7 @@ pub trait ControllerContract:
         ControllerParametersDTO {
             phase: phase.clone(),
             min_unbond_epochs: self.min_unbond_epochs().get(),
-            force_unbond_fees_percentage: self.force_unbond_fees_percentage().get(),
+            force_withdraw_fees_percentage: self.force_withdraw_fees_percentage().get(),
             deposit_fees_percentage: self.deposit_fees_percentage(phase).get(),
             rewards_per_share_per_block: self.rewards_per_share_per_block().get(),
             usdc_token_id: self.usdc_token().get_token_id(),
@@ -242,7 +242,7 @@ pub trait ControllerContract:
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
 
-    #[view(getForceUnbondFeesPercentage)]
-    #[storage_mapper("forceUnbondFeesPercentage")]
-    fn force_unbond_fees_percentage(&self) -> SingleValueMapper<u64>;
+    #[view(getForceWithdrawFeesPercentage)]
+    #[storage_mapper("forceWithdrawFeesPercentage")]
+    fn force_withdraw_fees_percentage(&self) -> SingleValueMapper<u64>;
 }

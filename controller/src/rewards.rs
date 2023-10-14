@@ -18,8 +18,6 @@ pub trait RewardsModule: token::TokenModule {
     /// - we want to compute the rewards for a user (it's not even mandatory but it's a calculation that we would have done
     ///   on the fly anyway. We will use the compute rewards function also as the view function to get the rewards of a user in real time off-chain)
     fn update_rewards_per_share(&self) {
-        require!(self.produce_rewards_enabled().get(), "Rewards are disabled");
-
         let last_update_block_nonce = self.last_update_block_nonce().get();
         let current_block_nonce = self.blockchain().get_block_nonce();
         let blocks_since_last_update = current_block_nonce - last_update_block_nonce;

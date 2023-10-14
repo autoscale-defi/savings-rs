@@ -28,11 +28,11 @@ multiversx_sc_wasm_adapter::endpoints! {
         claimRewards => claim_rewards
         claimControllerRewards => claim_controller_rewards
         rebalance => rebalance
-        addPlatform => add_platform
+        addPlatforms => add_platforms
         setPlatformDistribution => set_platforms_distribution
         setMinUnbondEpochs => set_min_unbond_epochs
         getControllerParameters => get_controller_parameters
-        getForceUnbondFeesPercentage => force_unbond_fees_percentage
+        getForceWithdrawFeesPercentage => force_withdraw_fees_percentage
         registerSavingsToken => register_savings_token
         registerUnbondToken => register_unbond_token
         calculateRewardsForGivenPosition => calculate_rewards

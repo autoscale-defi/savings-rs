@@ -1,8 +1,8 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
-use crate::token::SavingsTokenAttributes;
 use super::token;
+use crate::token::SavingsTokenAttributes;
 
 #[multiversx_sc::module]
 pub trait RewardsModule: token::TokenModule {
@@ -20,20 +20,20 @@ pub trait RewardsModule: token::TokenModule {
     fn update_rewards_per_share(&self) {
         let last_update_block_nonce = self.last_update_block_nonce().get();
         let current_block_nonce = self.blockchain().get_block_nonce();
-        let blocks_since_last_update = current_block_nonce - last_update_block_nonce;
         
-        if blocks_since_last_update == 0 {
-            return;
+        let rewards_enabled = self.produce_rewards_enabled().get();
+        let blocks_since_last_update = current_block_nonce - last_update_block_nonce;
+
+        if blocks_since_last_update > 0 && rewards_enabled {
+            let computed_rewards_per_share_since_last_update = self
+                .rewards_per_share_per_block()
+                .get()
+                .mul(blocks_since_last_update);
+
+            self.rewards_per_share().update(|x| {
+                *x += computed_rewards_per_share_since_last_update;
+            });
         }
-
-        let computed_rewards_per_share_since_last_update = self
-            .rewards_per_share_per_block()
-            .get()
-            .mul(blocks_since_last_update);
-
-        self.rewards_per_share().update(|x| {
-            *x += computed_rewards_per_share_since_last_update;
-        });
 
         self.last_update_block_nonce().set(current_block_nonce);
     }
@@ -56,8 +56,8 @@ pub trait RewardsModule: token::TokenModule {
         let mut rewards = savings_token_amount
             * &(self.rewards_per_share().get() - &attributes.initial_rewards_per_share);
 
-        rewards += &attributes.accumulated_rewards * savings_token_amount
-            / &attributes.total_shares;
+        rewards +=
+            &attributes.accumulated_rewards * savings_token_amount / &attributes.total_shares;
 
         rewards
     }

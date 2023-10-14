@@ -19,11 +19,18 @@ pub trait ControllerContract:
     token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault_proxy::VaultModule
 {
     #[init]
-    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase, min_unbond_epochs: u64, withdraw_fees_perc: u64) {
+    fn init(
+        &self,
+        usdc_token_id: TokenIdentifier,
+        phase: Phase,
+        min_unbond_epochs: u64,
+        withdraw_fees_perc: u64,
+    ) {
         self.usdc_token().set_if_empty(usdc_token_id);
         self.phase().set_if_empty(phase);
         self.min_unbond_epochs().set(min_unbond_epochs);
-        self.force_withdraw_fees_percentage().set(&withdraw_fees_perc);
+        self.force_withdraw_fees_percentage()
+            .set(&withdraw_fees_perc);
     }
 
     #[payable("*")]
@@ -235,13 +242,9 @@ pub trait ControllerContract:
         }
     }
 
-    fn invest(&self, amount: &BigUint) {
+    fn invest(&self, amount: &BigUint) {}
 
-    }
-
-    fn withdraw_from_platform_contracts(&self, amount: &BigUint) {
-
-    }
+    fn withdraw_from_platform_contracts(&self, amount: &BigUint) {}
 
     // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
     // If the function is not called at every epoch, it loops to update all epochs that have not been updated.

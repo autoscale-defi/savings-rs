@@ -118,12 +118,14 @@ pub trait ControllerContract:
                 .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
 
             output_payments.push(unbond_token_payment);
+
+            self.liquidity_needed_for_epoch(unbond_token_attr.unlock_epoch)
+                .update(|x| *x += rewards.total_shares.clone());
         }
 
-        // where do we check if there is enough rewards in the vault?
-        // tx will fail anyways but a require! could be nice (in the vault?)
         self.send_rewards(self.blockchain().get_caller(), rewards.accumulated_rewards);
         self.burn_savings_tokens(&payments);
+
         let caller = self.blockchain().get_caller();
         self.send().direct_multi(&caller, &output_payments);
 
@@ -162,6 +164,9 @@ pub trait ControllerContract:
         self.send()
             .direct_non_zero_esdt_payment(&self.blockchain().get_caller(), &output_payment);
 
+        self.min_liquidity_reserve_needed()
+            .update(|x| *x += payment.amount);
+
         output_payment
     }
 
@@ -197,12 +202,71 @@ pub trait ControllerContract:
     #[endpoint(claimControllerRewards)]
     fn claim_controller_rewards(&self) {}
 
+    // need a new name, rebalance looks shit
+
+    // i need to have the minimum liquidity reserve
+    // the minimum liquidity reserve is :
+    // the liquidity that hasn't been withdraw yet + (on unbond)
+    // the liquidity that will be withdraw in the next epoch(s) - need to define how much epochs +
+    // a margin liquidity for those who will force withdraw (a fixed margin amount or a percentage of our TVL?)
+
+    // if the total liquid reserve is > than the liquidity we need in the SC
+    // we'll invest the difference in the SC platforms following the given plateforms distribution
+    // if the reserve liquidity needed id < than the actual liquidity we have in the SC
+    // we'll withdraw from the SC platforms following the given plateforms distribution
     #[endpoint]
-    fn rebalance(&self) {}
+    fn rebalance(&self) {
+        self.update_min_liq_reserve_needed();
+
+        let min_liq_reserve_needed = self.min_liquidity_reserve_needed().get();
+        let liquidity_reserve = self.liquidity_reserve().get();
+        let liquidity_buffer = self.liquidity_buffer().get();
+
+        let total_liq_reserve = liquidity_reserve + liquidity_buffer;
+
+        if total_liq_reserve > min_liq_reserve_needed {
+            let liquidity_diff = total_liq_reserve - min_liq_reserve_needed;
+            self.invest(&liquidity_diff);
+        } else {
+            let liquidity_needed = min_liq_reserve_needed - total_liq_reserve;
+            self.withdraw_from_platform_contracts(&liquidity_needed);
+        }
+    }
+
+    fn invest(&self, amount: &BigUint) {
+
+    }
+
+    fn withdraw_from_platform_contracts(&self, amount: &BigUint) {
+
+    }
+
+    // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
+    // If the function is not called at every epoch, it loops to update all epochs that have not been updated.
+    // As a security, would it be useful to also add the liquidity needed for the current_epoch + 1 to be sure?
+    // I think it would be important to do it for at least current_epoch + 2 or 3
+    // Otherwise, I think we'll need to withdraw a lot of funds from the investments contracts.
+    fn update_min_liq_reserve_needed(&self) {
+        let current_epoch = self.blockchain().get_block_epoch();
+        let last_update = self.last_update_for_min_liq_reserve_needed().get();
+        let epoch_diff = current_epoch - last_update;
+
+        let mut liquidity = BigUint::zero();
+
+        for epoch in (current_epoch - epoch_diff + 1)..=current_epoch {
+            let liq_needed_for_epoch = self.liquidity_needed_for_epoch(epoch).get();
+            liquidity += liq_needed_for_epoch;
+        }
+
+        self.min_liquidity_reserve_needed()
+            .update(|x| *x += liquidity);
+        self.last_update_for_min_liq_reserve_needed()
+            .set(&current_epoch);
+    }
 
     #[only_owner]
-    #[endpoint(addPlatform)]
-    fn add_platform(&self) {}
+    #[endpoint(addPlatforms)]
+    fn add_platforms(&self) {}
 
     #[only_owner]
     #[endpoint(setPlatformDistribution)]
@@ -239,6 +303,21 @@ pub trait ControllerContract:
 
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
+
+    #[storage_mapper("liquidityNeededForEpoch")]
+    fn liquidity_needed_for_epoch(&self, epoch: u64) -> SingleValueMapper<BigUint>;
+
+    #[storage_mapper("minLiquidityReserveNeeded")]
+    fn min_liquidity_reserve_needed(&self) -> SingleValueMapper<BigUint>;
+
+    // In the future, it would be interesting for the liquidity buffer to be dynamic.
+    // It would represent a percentage of the total value locked.
+    #[storage_mapper("liquidityBuffer")]
+    fn liquidity_buffer(&self) -> SingleValueMapper<BigUint>;
+
+    // too long, need a new naming
+    #[storage_mapper("lastUpdateForMinLiqReserveNeeded")]
+    fn last_update_for_min_liq_reserve_needed(&self) -> SingleValueMapper<u64>;
 
     #[view(getForceWithdrawFeesPercentage)]
     #[storage_mapper("forceWithdrawFeesPercentage")]

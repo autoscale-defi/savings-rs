@@ -3,9 +3,10 @@ multiversx_sc::derive_imports!();
 
 use super::token;
 use crate::token::SavingsTokenAttributes;
+use multiversx_sc_modules::default_issue_callbacks;
 
 #[multiversx_sc::module]
-pub trait RewardsModule: token::TokenModule {
+pub trait RewardsModule: token::TokenModule + default_issue_callbacks::DefaultIssueCallbacksModule {
     /// Updates the rewards per share based on the current block number and the last time the rewards were updated.
     ///
     /// We use a static rewards per share per block and not a dynamic one based on the supply of the savings tokens (shares).

@@ -1,6 +1,8 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
+use multiversx_sc_modules::default_issue_callbacks;
+
 #[derive(TypeAbi, TopEncode, TopDecode)]
 pub struct SavingsTokenAttributes<M: ManagedTypeApi> {
     pub initial_rewards_per_share: BigUint<M>,
@@ -14,7 +16,7 @@ pub struct UnbondTokenAttributes {
 }
 
 #[multiversx_sc::module]
-pub trait TokenModule {
+pub trait TokenModule: default_issue_callbacks::DefaultIssueCallbacksModule {
     #[only_owner]
     #[payable("EGLD")]
     #[endpoint(registerSavingsToken)]
@@ -62,9 +64,11 @@ pub trait TokenModule {
         }
     }
 
+    #[view(getSavingsTokenId)]
     #[storage_mapper("savingsTokenId")]
-    fn savings_token(&self) -> NonFungibleTokenMapper<Self::Api>;
+    fn savings_token(&self) -> NonFungibleTokenMapper;
 
+    #[view(getUnbondToken)]
     #[storage_mapper("unbondToken")]
-    fn unbond_token(&self) -> NonFungibleTokenMapper<Self::Api>;
+    fn unbond_token(&self) -> NonFungibleTokenMapper;
 }

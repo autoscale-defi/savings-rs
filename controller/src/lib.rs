@@ -1,6 +1,7 @@
 #![no_std]
 
 use models::ControllerParametersDTO;
+use multiversx_sc_modules::default_issue_callbacks;
 use phase::Phase;
 use token::{SavingsTokenAttributes, UnbondTokenAttributes};
 
@@ -16,7 +17,11 @@ const PERCENTAGE_DIVIDER: u64 = 10000;
 
 #[multiversx_sc::contract]
 pub trait ControllerContract:
-    token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault_proxy::VaultModule
+    token::TokenModule
+    + rewards::RewardsModule
+    + phase::PhaseModule
+    + vault_proxy::VaultModule
+    + default_issue_callbacks::DefaultIssueCallbacksModule
 {
     #[init]
     fn init(
@@ -306,6 +311,7 @@ pub trait ControllerContract:
     #[storage_mapper("minUnbondEpochs")]
     fn min_unbond_epochs(&self) -> SingleValueMapper<u64>;
 
+    #[view(getUsdcTokenId)]
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
 

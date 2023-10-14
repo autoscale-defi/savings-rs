@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           26
-// Async Callback (empty):               1
-// Total number of exported functions:  28
+// Endpoints:                           29
+// Async Callback:                       1
+// Total number of exported functions:  31
 
 #![no_std]
 
@@ -32,9 +32,12 @@ multiversx_sc_wasm_adapter::endpoints! {
         setPlatformDistribution => set_platforms_distribution
         setMinUnbondEpochs => set_min_unbond_epochs
         getControllerParameters => get_controller_parameters
+        getUsdcTokenId => usdc_token
         getForceWithdrawFeesPercentage => force_withdraw_fees_percentage
         registerSavingsToken => register_savings_token
         registerUnbondToken => register_unbond_token
+        getSavingsTokenId => savings_token
+        getUnbondToken => unbond_token
         calculateRewardsForGivenPosition => calculate_rewards
         setRewardsPerSharePerBlock => set_rewards_per_share_per_block
         setProduceRewardsEnabled => set_produce_rewards_enabled
@@ -51,4 +54,4 @@ multiversx_sc_wasm_adapter::endpoints! {
     )
 }
 
-multiversx_sc_wasm_adapter::async_callback_empty! {}
+multiversx_sc_wasm_adapter::async_callback! { controller }

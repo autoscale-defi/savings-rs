@@ -3,7 +3,7 @@ CHAIN="D"
 OWNER="swallet.pem"
 CONTROLLER="controller/output/controller.wasm"
 
-SC_ADDRESS="erd1qqqqqqqqqqqqqpgqxxz6h94us93hyj0wrzrd5y8nua24ema4ehjq8s5n3n"
+SC_ADDRESS="erd1qqqqqqqqqqqqqpgqfj8jxtk8crkjq0whsyfl58pkpa8vljsxehjq2p8ems"
 
 USDC_TOKEN_ID="str:USDC-8d4068"
 PHASE=0
@@ -48,7 +48,7 @@ registerSavingsToken() {
 }
 
 registerUnbondToken() {
-    NAME="str:AutoscaleSavingsUnbondUSDC"
+    NAME="str:AutoscaleSavingsUSDC"
     TICKER="str:ASUUSDC"
     DECIMALS=6
 
@@ -76,7 +76,7 @@ setDepositFeesInAccPhase() {
 }
 
 setRewardsPerSharePerBlock() {
-    new_rewards_per_share_per_bloc=100
+    new_rewards_per_share_per_bloc=10
 
     mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
           --pem=${OWNER} \
@@ -97,4 +97,8 @@ setProduceRewardsEnabled() {
           --function="setProduceRewardsEnabled" \
           --arguments $bool \
           --send || return
+}
+
+getUnbondToken() {
+    mxpy --verbose contract query ${SC_ADDRESS} --function="getUnbondToken" --proxy=${PROXY} 
 }

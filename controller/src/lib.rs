@@ -55,7 +55,6 @@ pub trait ControllerContract:
         new_savings_token
     }
 
-    // maybe we can do this for the deposit & the withdraw ? Do we add if its for the deposit or the withdraw in args ?
     fn charge_and_send_deposit_fees(&self, phase: Phase, amount: &BigUint) -> BigUint {
         let fees_percentage = self.deposit_fees_percentage(phase).get();
 
@@ -187,8 +186,7 @@ pub trait ControllerContract:
         self.burn_savings_tokens(&payments);
 
         let caller = self.blockchain().get_caller();
-        // where do we check if there is enough rewards in the vault?
-        // tx will fail anyways but a require! could be nice (in the vault?)
+
         self.send_rewards(caller.clone(), rewards.accumulated_rewards);
         self.send()
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);

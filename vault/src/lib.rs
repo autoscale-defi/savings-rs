@@ -28,6 +28,10 @@ pub trait VaultContract {
     #[endpoint(sendRewards)]
     fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) {
         self.require_caller_is_controller();
+        require!(
+            self.rewards_reserve().get() >= amount,
+            "Not enough rewards reserve"
+        );
 
         self.send().direct_esdt(
             &destination,

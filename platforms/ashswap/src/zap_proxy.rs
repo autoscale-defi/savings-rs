@@ -89,7 +89,7 @@ pub trait ZapProxyModule: ContractBase
         in_payment: EsdtTokenPayment<Self::Api>
     ) -> EsdtTokenPayment<Self::Api> {
         let start_exchange = self.get_zap_start_exchange_for_token_or_default(
-            &self.lp_token_identifier_for_pool(&pool_address).get()
+            &self.lp_token_identifier_for_pool(pool_address).get()
         );
 
         let result: ZapInResultInfos<Self::Api> = self.zap_proxy(self.zap_address().get())
@@ -114,7 +114,7 @@ pub trait ZapProxyModule: ContractBase
         in_payment: EsdtTokenPayment<Self::Api>
     ) -> EsdtTokenPayment<Self::Api> {
         let start_exchange = self.get_zap_start_exchange_for_token_or_default(
-            &self.lp_token_identifier_for_pool(&pool_address).get()
+            &self.lp_token_identifier_for_pool(pool_address).get()
         );
 
         // the result token won't be EGLD, hence no need to use the EgldOrEsdtTokenPayment struct

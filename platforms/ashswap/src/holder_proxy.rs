@@ -89,7 +89,7 @@ pub trait HolderProxyModule: ContractBase
 
         let separated_payments = self.separate_specific_payment_from_another_ones(
             &result,
-            &pool_lp_token_identifier
+            pool_lp_token_identifier
         );
 
         ExitFarmResult {

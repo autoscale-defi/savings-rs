@@ -213,7 +213,7 @@ pub trait AshSwapPlatformContract: ContractBase
             }
         }
 
-        self.handle_rewards(&receiver, &all_rewards)
+        self.handle_rewards(receiver, &all_rewards)
     }
 
     fn handle_rewards(

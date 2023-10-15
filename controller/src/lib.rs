@@ -292,12 +292,58 @@ pub trait ControllerContract:
 
             // deposit in the platform SC
             let sc_address = platform.sc_address;
-            // deposit 
-
+            // deposit
         }
     }
 
-    fn withdraw_from_platform_contracts(&self, amount: &BigUint) {}
+    fn withdraw_from_platform_contracts(&self, total_amount: &BigUint) {
+        let platforms = self.platforms();
+        let total_deposited = self.get_total_deposited();
+
+        let mut new_liquidity_amount = BigUint::zero();
+        let mut new_rewards = BigUint::zero();
+
+        for platform in platforms.iter() {
+            let amount_deposited = self.get_total_deposited_for_platform(platform.sc_address);
+            let amount_to_withdraw = amount_deposited * total_amount / &total_deposited;
+
+            // withdraw from the platform SC
+            let withdraw_result: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+
+            let withdraw_payment = withdraw_result.get(0);
+            let rewards_payment = withdraw_result.get(1);
+
+            new_liquidity_amount += withdraw_payment.amount;
+            new_rewards += rewards_payment.amount;
+        }
+        let rewards_payment =
+            EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, new_rewards);
+        // add clarity on variable names
+
+        self.increase_reserve(rewards_payment);
+        self.liquidity_reserve()
+            .update(|x| *x += new_liquidity_amount);
+    }
+
+    #[view(getTotalDeposited)]
+    fn get_total_deposited(&self) -> BigUint {
+        let platforms = self.platforms();
+        let mut total_deposited = BigUint::zero();
+
+        for platform in platforms.iter() {
+            let sc_address = platform.sc_address;
+            let amount_deposited = self.get_total_deposited_for_platform(sc_address);
+
+            total_deposited += amount_deposited;
+        }
+
+        total_deposited
+    }
+
+    fn get_total_deposited_for_platform(&self, sc_address: ManagedAddress) -> BigUint {
+        // get total deposited with proxy
+        BigUint::zero()
+    }
 
     // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
     // If the function is not called at every epoch, it loops to update all epochs that have not been updated.

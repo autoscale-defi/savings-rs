@@ -180,7 +180,7 @@ pub trait ControllerContract:
             .direct_non_zero_esdt_payment(&self.blockchain().get_caller(), &output_payment);
 
         self.min_liquidity_reserve_needed()
-            .update(|x| *x += payment.amount);
+            .update(|x| *x -= payment.amount);
 
         output_payment
     }
@@ -222,8 +222,18 @@ pub trait ControllerContract:
             let sc_address = platform.sc_address;
 
             // claimRewards (call platform SC)
-            let rewards_payment =
-                EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, BigUint::zero());
+            let claim_rewards_payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let usdc_token_id = self.usdc_token().get_token_id();
+
+            let mut rewards_payment =
+                EsdtTokenPayment::new(usdc_token_id.clone(), 0, BigUint::zero());
+
+            for payment in claim_rewards_payments.iter() {
+                if payment.token_identifier == usdc_token_id {
+                    rewards_payment.amount += payment.amount;
+                }
+                // send the other payments somewhere ?
+            }
             // send rewards to vault  (TAKE A PERCENTAGE FOR US AND THEN SEND TO VAULT)
             self.increase_reserve(rewards_payment);
         }

@@ -215,7 +215,19 @@ pub trait ControllerContract:
     }
 
     #[endpoint(claimControllerRewards)]
-    fn claim_controller_rewards(&self) {}
+    fn claim_controller_rewards(&self) {
+        let platforms = self.platforms();
+
+        for platform in platforms.iter() {
+            let sc_address = platform.sc_address;
+
+            // claimRewards (call platform SC)
+            let rewards_payment =
+                EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, BigUint::zero());
+            // send rewards to vault  (TAKE A PERCENTAGE FOR US AND THEN SEND TO VAULT)
+            self.increase_reserve(rewards_payment);
+        }
+    }
 
     // need a new name, rebalance looks shit
 

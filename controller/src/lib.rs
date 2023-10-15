@@ -219,7 +219,7 @@ pub trait ControllerContract:
         let platforms = self.platforms();
 
         for platform in platforms.iter() {
-            let sc_address = platform.sc_address;
+            let sc_address = platform.sc_address; // will be used to call the platform sc
 
             // claimRewards (call platform SC)
             let claim_rewards_payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
@@ -270,7 +270,32 @@ pub trait ControllerContract:
         }
     }
 
-    fn invest(&self, amount: &BigUint) {}
+    fn invest(&self, total_amount: &BigUint) {
+        let platforms = self.platforms();
+        let total_weight = self.platforms_total_weight().get();
+
+        let mut left_payment_amount = total_amount.clone();
+        let mut used_weight = 0;
+
+        for platform in platforms.iter() {
+            let invest_amount = if used_weight + platform.weight == total_weight {
+                core::mem::take(&mut left_payment_amount)
+            } else {
+                let calculated_amount =
+                    total_amount * &BigUint::from(platform.weight) / &BigUint::from(total_weight);
+
+                left_payment_amount -= calculated_amount.clone();
+
+                calculated_amount
+            };
+            used_weight += platform.weight;
+
+            // deposit in the platform SC
+            let sc_address = platform.sc_address;
+            // deposit 
+
+        }
+    }
 
     fn withdraw_from_platform_contracts(&self, amount: &BigUint) {}
 

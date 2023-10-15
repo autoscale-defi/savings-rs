@@ -1,6 +1,6 @@
 #![no_std]
 
-use models::ControllerParametersDTO;
+use models::{ControllerParametersDTO, PlatformInfo};
 use multiversx_sc_modules::default_issue_callbacks;
 use phase::Phase;
 use token::{SavingsTokenAttributes, UnbondTokenAttributes};
@@ -23,6 +23,7 @@ pub trait ControllerContract:
     + vault_proxy::VaultModule
     + default_issue_callbacks::DefaultIssueCallbacksModule
 {
+    // todo add fees_address
     #[init]
     fn init(
         &self,
@@ -274,14 +275,46 @@ pub trait ControllerContract:
             .set(&current_epoch);
     }
 
+    // We are also supposed to withdraw from all the platforms and then re-deposit with the new distribution.
+    // It will be done later.
     #[only_owner]
     #[endpoint(addPlatforms)]
-    fn add_platforms(&self) {}
+    fn add_platforms(
+        &self,
+        platforms: MultiValueEncoded<MultiValue3<ManagedBuffer, ManagedAddress, u64>>,
+    ) {
+        for platform in platforms.into_iter() {
+            let (name, sc_address, weight) = platform.into_tuple();
 
+            let platform_info = PlatformInfo {
+                name,
+                sc_address,
+                weight,
+            };
+            let is_new = self.platforms().insert(platform_info);
+            require!(is_new, "Platform already added");
+
+            self.platforms_total_weight().update(|x| *x += weight);
+        }
+    }
+
+    // I'm not sure this works (Maybe I have to loop on the indexes instead).
+    // We are also supposed to withdraw from all the platforms and then re-deposit with the new distribution.
+    // It will be done later.
     #[only_owner]
-    #[endpoint(setPlatformDistribution)]
-    fn set_platforms_distribution(&self) {
-        // quand on change la répartition alors on va withdraw + redeposit all dans cette fonction
+    #[endpoint(removePlatforms)]
+    fn remove_platforms(&self, sc_addresses: MultiValueEncoded<ManagedAddress>) {
+        for sc_address in sc_addresses.into_iter() {
+            let platforms = self.platforms();
+
+            for platform in platforms.iter() {
+                if platform.sc_address == sc_address {
+                    self.platforms().swap_remove(&platform);
+                    self.platforms_total_weight()
+                        .update(|x| *x -= platform.weight);
+                }
+            }
+        }
     }
 
     #[endpoint(setMinUnbondEpochs)]
@@ -310,6 +343,14 @@ pub trait ControllerContract:
 
     #[storage_mapper("minUnbondEpochs")]
     fn min_unbond_epochs(&self) -> SingleValueMapper<u64>;
+
+    #[view(getPlaforms)]
+    #[storage_mapper("platforms")]
+    fn platforms(&self) -> UnorderedSetMapper<PlatformInfo<Self::Api>>;
+
+    #[view(getPlatformsTotalWeight)]
+    #[storage_mapper("platformsTotalWeight")]
+    fn platforms_total_weight(&self) -> SingleValueMapper<u64>;
 
     #[view(getUsdcTokenId)]
     #[storage_mapper("usdcTokenId")]

@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           29
+// Endpoints:                           31
 // Async Callback:                       1
-// Total number of exported functions:  31
+// Total number of exported functions:  33
 
 #![no_std]
 
@@ -29,9 +29,11 @@ multiversx_sc_wasm_adapter::endpoints! {
         claimControllerRewards => claim_controller_rewards
         rebalance => rebalance
         addPlatforms => add_platforms
-        setPlatformDistribution => set_platforms_distribution
+        removePlatforms => remove_platforms
         setMinUnbondEpochs => set_min_unbond_epochs
         getControllerParameters => get_controller_parameters
+        getPlaforms => platforms
+        getPlatformsTotalWeight => platforms_total_weight
         getUsdcTokenId => usdc_token
         getForceWithdrawFeesPercentage => force_withdraw_fees_percentage
         registerSavingsToken => register_savings_token

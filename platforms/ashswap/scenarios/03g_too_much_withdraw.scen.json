@@ -1,0 +1,30 @@
+{
+    "name": "saving-rs",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "02a_deposit.scen.json"
+        },
+        {
+            "step": "scCall",
+            "txId": "controller withdraws too much",
+            "tx": {
+                "from": "address:controller_contract",
+                "to": "sc:saving",
+                "function": "withdraw",
+                "arguments": [
+                    "1,000,001"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "4",
+                "message": "str:Too much withdrawal amount requested",
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}

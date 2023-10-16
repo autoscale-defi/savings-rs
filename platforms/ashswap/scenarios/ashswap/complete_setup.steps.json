@@ -1,0 +1,21 @@
+{
+    "name": "complete setup",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "init_accounts.steps.json"
+        },
+        {
+            "step": "externalSteps",
+            "path": "deploy_pools.steps.json"
+        },
+        {
+            "step": "externalSteps",
+            "path": "deploy_farms.steps.json"
+        },
+        {
+            "step": "externalSteps",
+            "path": "add_liquidity.steps.json"
+        }
+    ]
+}

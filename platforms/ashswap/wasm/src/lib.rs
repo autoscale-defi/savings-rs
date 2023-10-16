@@ -5,21 +5,42 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                            0
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:   2
+// Total number of exported functions:  21
 
 #![no_std]
-#![allow(internal_features)]
+
+// Configuration that works with rustc < 1.73.0.
+// TODO: Recommended rustc version: 1.73.0 or newer.
 #![feature(lang_items)]
 
 multiversx_sc_wasm_adapter::allocator!();
 multiversx_sc_wasm_adapter::panic_handler!();
 
 multiversx_sc_wasm_adapter::endpoints! {
-    empty
+    saving_rs
     (
         init => init
+        deposit => deposit
+        withdraw => withdraw
+        claimRewards => claim_rewards_endpoint
+        getControllerAddress => controller_address
+        getHolderAddress => holder_address
+        getAssetTokenIdentifier => asset_token_identifier
+        getShareTokenIdentifierForPool => lp_token_identifier_for_pool
+        getShareTokenIdentifierForFarm => share_token_identifier_for_farm
+        getCurrentPositionForFarm => current_position_for_farm
+        getPools => pools
+        getPoolsTotalWeight => pools_total_weight
+        getZapAddress => zap_address
+        getZapStartExchangeForToken => zap_start_exchange_for_token
+        getWaitingRewards => waiting_rewards
+        getDepositedAssets => deposited_assets
+        addPool => add_pool
+        setSwappableToken => set_swappable_token
+        removePool => remove_pool
+        setZapStartExchangeForToken => set_zap_start_exchange_for_token
     )
 }
 

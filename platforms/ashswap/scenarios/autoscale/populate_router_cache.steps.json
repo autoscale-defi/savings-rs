@@ -1,0 +1,106 @@
+{
+    "name": "deploy contract",
+    "steps": [
+        {
+            "step": "scCall",
+            "txId": "zap in ASH to USDT-ASH LP",
+            "tx": {
+                "from": "address:ats_owner",
+                "to": "sc:ats_router",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:ASH-abcdef",
+                        "value": "1,000,000"
+                    }
+                ],
+                "function": "zapIn",
+                "arguments": [
+                    "u8:1|u8:0",
+                    "sc:usdt_ash_ashswap_pool",
+                    "u8:0"
+                ],
+                "gasLimit": "200,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "zap in BUSD to BUSD-WEGLD LP",
+            "tx": {
+                "from": "address:ats_owner",
+                "to": "sc:ats_router",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:BUSD-abcdef",
+                        "value": "500,000"
+                    }
+                ],
+                "function": "zapIn",
+                "arguments": [
+                    "u8:1|u8:1|nested:str:BUSD-abcdef",
+                    "sc:busd_egld_ashswap_pool",
+                    "u8:0"
+                ],
+                "gasLimit": "200,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "zap in BUSD to USDC-USDT-BUSD LP",
+            "tx": {
+                "from": "address:ats_owner",
+                "to": "sc:ats_router",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:BUSD-abcdef",
+                        "value": "500,000"
+                    }
+                ],
+                "function": "zapIn",
+                "arguments": [
+                    "u8:1|u8:0",
+                    "sc:usdc_usdt_busd_ashswap_pool",
+                    "u8:0"
+                ],
+                "gasLimit": "200,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:ats_router": {
+                    "owner": "address:ats_owner",
+                    "nonce": "0",
+                    "code": "file:router.wasm",
+                    "storage": {
+                        "+": "*"
+                    }
+                },
+                "+": "*"
+            }
+        }
+    ]
+}

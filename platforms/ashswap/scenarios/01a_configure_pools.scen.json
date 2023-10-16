@@ -1,0 +1,134 @@
+{
+    "name": "saving-rs",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "00_init.scen.json"
+        },
+        {
+            "step": "scCall",
+            "txId": "add_ash_as_swappable_token",
+            "tx": {
+                "from": "address:saving_owner",
+                "to": "sc:saving",
+                "function": "setSwappableToken",
+                "arguments": [
+                    "str:ASH-abcdef",
+                    "true"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add busd egld pool",
+            "tx": {
+                "from": "address:saving_owner",
+                "to": "sc:saving",
+                "function": "addPool",
+                "arguments": [
+                    "sc:busd_egld_ashswap_pool",
+                    "sc:ashswap_busd_egld_farm",
+                    "2"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add usdc usdt busd pool",
+            "tx": {
+                "from": "address:saving_owner",
+                "to": "sc:saving",
+                "function": "addPool",
+                "arguments": [
+                    "sc:usdc_usdt_busd_ashswap_pool",
+                    "sc:ashswap_usdc_t_b_farm",
+                    "1"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "set busd on ashswap as the start exchange for busd-egld lp",
+            "tx": {
+                "from": "address:saving_owner",
+                "to": "sc:saving",
+                "function": "setZapStartExchangeForToken",
+                "arguments": [
+                    "str:BUSDEGLDLP-abcdef",
+                    "1",
+                    "u8:1|nested:str:BUSD-abcdef"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/saving-rs.wasm",
+                    "storage": {
+                        "str:controller_address": "address:controller_contract",
+                        "str:holder_address": "sc:ats_ash_holder",
+                        "str:zap_address": "sc:ats_router",
+                        "str:asset_token_identifier": "str:USDC-abcdef",
+                        "str:pools.info": "0x00000002000000010000000200000002",
+                        "str:pools.node_id|sc:busd_egld_ashswap_pool": "1",
+                        "str:pools.node_id|sc:usdc_usdt_busd_ashswap_pool": "2",
+                        "str:pools.node_links|u32:1": "u32:0|u32:2",
+                        "str:pools.node_links|u32:2": "u32:1|u32:0",
+                        "str:pools.value|u32:1": "sc:busd_egld_ashswap_pool",
+                        "str:pools.value|u32:2": "sc:usdc_usdt_busd_ashswap_pool",
+                        "str:pools.mapped|sc:usdc_usdt_busd_ashswap_pool": "sc:usdc_usdt_busd_ashswap_pool|sc:ashswap_usdc_t_b_farm|u64:1",
+                        "str:pools.mapped|sc:busd_egld_ashswap_pool": "sc:busd_egld_ashswap_pool|sc:ashswap_busd_egld_farm|u64:2",
+                        "str:lp_token_identifier_for_pool|sc:busd_egld_ashswap_pool": "str:BUSDEGLDLP-abcdef",
+                        "str:lp_token_identifier_for_pool|sc:usdc_usdt_busd_ashswap_pool": "str:USDCTBLP-abcdef",
+                        "str:share_token_identifier_for_farm|sc:ashswap_busd_egld_farm": "str:BUSDEGLDFA-abcdef",
+                        "str:share_token_identifier_for_farm|sc:ashswap_usdc_t_b_farm": "str:USDCTBFA-abcdef",
+                        "str:pools_total_weight": "3",
+                        "str:swappable_tokens|nested:str:ASH-abcdef": "true",
+                        "str:zap_start_exchange_for_token|nested:str:BUSDEGLDLP-abcdef": "u8:1|u8:1|nested:str:BUSD-abcdef"
+                    }
+                },
+                "+": "*"
+            }
+        }
+
+    ]
+}

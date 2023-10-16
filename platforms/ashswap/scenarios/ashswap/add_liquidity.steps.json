@@ -1,0 +1,154 @@
+{
+    "name": "add liquidity",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:ashswap_lp": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000",
+                    "esdt": {
+                        "str:USDC-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:USDT-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:BUSD-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:WEGLD-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000,000,000,000,000",
+                        "str:HTM-abcdef": "5,000,000,000,000,000,000,000"
+                    }
+                }
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add-liquidity busd egld",
+            "tx": {
+                "from": "address:ashswap_lp",
+                "to": "sc:busd_egld_ashswap_pool",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:BUSD-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    },
+                    {
+                        "tokenIdentifier": "str:WEGLD-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    }
+                ],
+                "function": "addLiquidity",
+                "arguments": [
+                    "100",
+                    "address:ashswap_lp"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add-liquidity usdt ash",
+            "tx": {
+                "from": "address:ashswap_lp",
+                "to": "sc:usdt_ash_ashswap_pool",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:USDT-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    },
+                    {
+                        "tokenIdentifier": "str:ASH-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    }
+                ],
+                "function": "addLiquidity",
+                "arguments": [
+                    "100",
+                    "address:ashswap_lp"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add-liquidity usdc usdt busd",
+            "tx": {
+                "from": "address:ashswap_lp",
+                "to": "sc:usdc_usdt_busd_ashswap_pool",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:USDC-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    },
+                    {
+                        "tokenIdentifier": "str:USDT-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    },
+                    {
+                        "tokenIdentifier": "str:BUSD-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    }
+                ],
+                "function": "addLiquidity",
+                "arguments": [
+                    "100",
+                    "address:ashswap_lp"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "add-liquidity busd htm",
+            "tx": {
+                "from": "address:ashswap_lp",
+                "to": "sc:busd_htm_ashswap_pool",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:BUSD-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    },
+                    {
+                        "tokenIdentifier": "str:HTM-abcdef",
+                        "value": "2,100,000,000,000,000"
+                    }
+                ],
+                "function": "addLiquidity",
+                "arguments": [
+                    "100",
+                    "address:ashswap_lp"
+                ],
+                "gasLimit": "100,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}

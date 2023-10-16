@@ -13,3 +13,5 @@ Cargo.lock
 
 # VSCode specific files
 .vscode/*
+
+swallet.pem

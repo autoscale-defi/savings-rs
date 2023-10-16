@@ -1,9 +1,12 @@
 PROXY="https://devnet-gateway.multiversx.com"
 CHAIN="D"
 OWNER="swallet.pem"
-CONTROLLER="controller/output/controller.wasm"
 
-SC_ADDRESS="erd1qqqqqqqqqqqqqpgqfj8jxtk8crkjq0whsyfl58pkpa8vljsxehjq2p8ems"
+CONTROLLER="controller/output/controller.wasm"
+VAULT="vault/output/vault.wasm"
+
+CONTROLLER_ADDR="erd1qqqqqqqqqqqqqpgqfj8jxtk8crkjq0whsyfl58pkpa8vljsxehjq2p8ems"
+VAULT_ADDR="erd1qqqqqqqqqqqqqpgqyyvtfscnszfpm3gs0e6jgr8vcj8jcym4ehjq2fz4xc"
 
 USDC_TOKEN_ID="str:USDC-8d4068"
 PHASE=0
@@ -20,8 +23,18 @@ deployController() {
         --outfile="deploy-devnet.interaction.json" --send || return
 }
 
+deployVault() {
+  mxpy --verbose contract deploy --bytecode="$VAULT" --recall-nonce \
+        --pem=$OWNER \
+        --gas-limit=599000000 \
+        --proxy=$PROXY --chain=$CHAIN \
+        --metadata-payable-by-sc \
+        --arguments $USDC_TOKEN_ID $MY_ADDR \
+        --outfile="deploy-devnet.interaction.json" --send || return
+}
+
 upgradeController() {
-    mxpy --verbose contract upgrade ${SC_ADDRESS} --bytecode="$CONTROLLER" --recall-nonce \
+    mxpy --verbose contract upgrade ${CONTROLLER_ADDR} --bytecode="$CONTROLLER" --recall-nonce \
     --pem=${OWNER} \
     --gas-limit=599000000 \
     --proxy=${PROXY} --chain=${CHAIN} \
@@ -32,12 +45,24 @@ upgradeController() {
     echo "Smart contract upgraded address: ${ADDRESS}"
 }
 
+upgradeVault() {
+    mxpy --verbose contract upgrade ${VAULT_ADDR} --bytecode="$VAULT" --recall-nonce \
+    --pem=${OWNER} \
+    --gas-limit=599000000 \
+    --proxy=${PROXY} --chain=${CHAIN} \
+    --metadata-payable-by-sc \
+    --arguments $USDC_TOKEN_ID $CONTROLLER_ADDR \
+    --send --outfile="deploy-devnet.interaction.json" || return
+
+    echo "Smart contract upgraded address: ${ADDRESS}"
+}
+
 registerSavingsToken() {
     NAME="str:AutoscaleSavingsUSDC"
     TICKER="str:ASUSDC"
     DECIMALS=6
 
-    mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
           --proxy=${PROXY} --chain=${CHAIN} \
           --gas-limit=100000000 \
@@ -52,7 +77,7 @@ registerUnbondToken() {
     TICKER="str:ASUUSDC"
     DECIMALS=6
 
-    mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
           --proxy=${PROXY} --chain=${CHAIN} \
           --gas-limit=100000000 \
@@ -66,7 +91,7 @@ setDepositFeesInAccPhase() {
     phase=0
     fees_perc=1
 
-    mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
           --proxy=${PROXY} --chain=${CHAIN} \
           --gas-limit=100000000 \
@@ -78,7 +103,7 @@ setDepositFeesInAccPhase() {
 setRewardsPerSharePerBlock() {
     new_rewards_per_share_per_bloc=10
 
-    mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
           --proxy=${PROXY} --chain=${CHAIN} \
           --gas-limit=100000000 \
@@ -90,7 +115,7 @@ setRewardsPerSharePerBlock() {
 setProduceRewardsEnabled() {
     bool=1
 
-    mxpy --verbose contract call ${SC_ADDRESS} --recall-nonce \
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
           --proxy=${PROXY} --chain=${CHAIN} \
           --gas-limit=100000000 \
@@ -99,6 +124,16 @@ setProduceRewardsEnabled() {
           --send || return
 }
 
-getUnbondToken() {
-    mxpy --verbose contract query ${SC_ADDRESS} --function="getUnbondToken" --proxy=${PROXY} 
+setVaultAddress() {
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
+          --pem=${OWNER} \
+          --proxy=${PROXY} --chain=${CHAIN} \
+          --gas-limit=100000000 \
+          --function="setVaultAddress" \
+          --arguments $VAULT_ADDR \
+          --send || return 
+}
+
+getRewardsPerShare() {
+    mxpy --verbose contract query ${CONTROLLER_ADDR} --function="getRewardsPerShare" --proxy=${PROXY} 
 }

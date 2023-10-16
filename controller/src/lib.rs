@@ -224,7 +224,7 @@ pub trait ControllerContract:
             let sc_address = platform.sc_address; // will be used to call the platform sc
 
             // claimRewards (call platform SC)
-            let claim_rewards_payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let claim_rewards_payments = self.claim_rewards_for_platform(sc_address);
             let usdc_token_id = self.usdc_token().get_token_id();
 
             let mut rewards_payment =
@@ -290,9 +290,8 @@ pub trait ControllerContract:
             };
             used_weight += platform.weight;
 
-            // deposit in the platform SC
             let sc_address = platform.sc_address;
-            // deposit
+            self.invest_in_platform(sc_address, invest_amount);
         }
     }
 
@@ -304,11 +303,12 @@ pub trait ControllerContract:
         let mut new_rewards = BigUint::zero();
 
         for platform in platforms.iter() {
-            let amount_deposited = self.get_total_deposited_for_platform(platform.sc_address);
+            let sc_address = platform.sc_address;
+
+            let amount_deposited = self.get_total_deposited_for_platform(sc_address.clone());
             let amount_to_withdraw = amount_deposited * total_amount / &total_deposited;
 
-            // withdraw from the platform SC
-            let withdraw_result: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let withdraw_result = self.withdraw_from_platform(sc_address, amount_to_withdraw);
 
             let withdraw_payment = withdraw_result.get(0);
             let rewards_payment = withdraw_result.get(1);
@@ -318,7 +318,6 @@ pub trait ControllerContract:
         }
         let rewards_payment =
             EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, new_rewards);
-        // add clarity on variable names
 
         self.increase_reserve(rewards_payment);
         self.liquidity_reserve()
@@ -338,11 +337,6 @@ pub trait ControllerContract:
         }
 
         total_deposited
-    }
-
-    fn get_total_deposited_for_platform(&self, sc_address: ManagedAddress) -> BigUint {
-        // get total deposited with proxy
-        BigUint::zero()
     }
 
     // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
@@ -444,10 +438,6 @@ pub trait ControllerContract:
     #[view(getPlatformsTotalWeight)]
     #[storage_mapper("platformsTotalWeight")]
     fn platforms_total_weight(&self) -> SingleValueMapper<u64>;
-
-    #[view(getUsdcTokenId)]
-    #[storage_mapper("usdcTokenId")]
-    fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
 
     #[storage_mapper("liquidityNeededForEpoch")]
     fn liquidity_needed_for_epoch(&self, epoch: u64) -> SingleValueMapper<BigUint>;

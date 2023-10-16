@@ -76,7 +76,6 @@ pub trait StorageModule: ContractBase {
     /// The actual asset amount can vary for a lot of reasons: slippage, fees, hacks of third-party contracts, etc...
     /// After the hackathon, it'll be replaced by a real computation, using AshSwap/Autoscale contracts' views.
     #[storage_mapper("deposited_assets")]
-    #[view(getDepositedAssets)]
     fn deposited_assets(&self) -> SingleValueMapper<Self::Api, BigUint<Self::Api>>;
 
     fn get_zap_start_exchange_for_token_or_default(

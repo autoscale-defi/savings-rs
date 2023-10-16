@@ -6,7 +6,9 @@ use crate::token::SavingsTokenAttributes;
 use multiversx_sc_modules::default_issue_callbacks;
 
 #[multiversx_sc::module]
-pub trait RewardsModule: token::TokenModule + default_issue_callbacks::DefaultIssueCallbacksModule {
+pub trait RewardsModule:
+    token::TokenModule + default_issue_callbacks::DefaultIssueCallbacksModule
+{
     /// Updates the rewards per share based on the current block number and the last time the rewards were updated.
     ///
     /// We use a static rewards per share per block and not a dynamic one based on the supply of the savings tokens (shares).
@@ -21,7 +23,7 @@ pub trait RewardsModule: token::TokenModule + default_issue_callbacks::DefaultIs
     fn update_rewards_per_share(&self) {
         let last_update_block_nonce = self.last_update_block_nonce().get();
         let current_block_nonce = self.blockchain().get_block_nonce();
-        
+
         let rewards_enabled = self.produce_rewards_enabled().get();
         let blocks_since_last_update = current_block_nonce - last_update_block_nonce;
 

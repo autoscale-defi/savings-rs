@@ -239,8 +239,6 @@ pub trait ControllerContract:
         }
     }
 
-    // need a new name, rebalance looks shit
-
     // i need to have the minimum liquidity reserve
     // the minimum liquidity reserve is :
     // the liquidity that hasn't been withdraw yet + (on unbond)
@@ -251,8 +249,8 @@ pub trait ControllerContract:
     // we'll invest the difference in the SC platforms following the given plateforms distribution
     // if the reserve liquidity needed id < than the actual liquidity we have in the SC
     // we'll withdraw from the SC platforms following the given plateforms distribution
-    #[endpoint]
-    fn rebalance(&self) {
+    #[endpoint(manageLiquidity)]
+    fn manage_liquidity(&self) {
         self.update_min_liq_reserve_needed();
 
         let min_liq_reserve_needed = self.min_liquidity_reserve_needed().get();

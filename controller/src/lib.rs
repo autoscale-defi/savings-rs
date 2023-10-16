@@ -1,6 +1,7 @@
 #![no_std]
 
-use models::ControllerParametersDTO;
+use models::{ControllerParametersDTO, PlatformInfo};
+use multiversx_sc_modules::default_issue_callbacks;
 use phase::Phase;
 use token::{SavingsTokenAttributes, UnbondTokenAttributes};
 
@@ -16,12 +17,26 @@ const PERCENTAGE_DIVIDER: u64 = 10000;
 
 #[multiversx_sc::contract]
 pub trait ControllerContract:
-    token::TokenModule + rewards::RewardsModule + phase::PhaseModule + vault_proxy::VaultModule
+    token::TokenModule
+    + rewards::RewardsModule
+    + phase::PhaseModule
+    + vault_proxy::VaultModule
+    + default_issue_callbacks::DefaultIssueCallbacksModule
 {
+    // todo add fees_address
     #[init]
-    fn init(&self, usdc_token_id: TokenIdentifier, phase: Phase) {
+    fn init(
+        &self,
+        usdc_token_id: TokenIdentifier,
+        phase: Phase,
+        min_unbond_epochs: u64,
+        withdraw_fees_perc: u64,
+    ) {
         self.usdc_token().set_if_empty(usdc_token_id);
         self.phase().set_if_empty(phase);
+        self.min_unbond_epochs().set(min_unbond_epochs);
+        self.force_withdraw_fees_percentage()
+            .set(&withdraw_fees_perc);
     }
 
     #[payable("*")]
@@ -118,12 +133,14 @@ pub trait ControllerContract:
                 .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
 
             output_payments.push(unbond_token_payment);
+
+            self.liquidity_needed_for_epoch(unbond_token_attr.unlock_epoch)
+                .update(|x| *x += rewards.total_shares.clone());
         }
 
-        // where do we check if there is enough rewards in the vault?
-        // tx will fail anyways but a require! could be nice (in the vault?)
         self.send_rewards(self.blockchain().get_caller(), rewards.accumulated_rewards);
         self.burn_savings_tokens(&payments);
+
         let caller = self.blockchain().get_caller();
         self.send().direct_multi(&caller, &output_payments);
 
@@ -162,6 +179,9 @@ pub trait ControllerContract:
         self.send()
             .direct_non_zero_esdt_payment(&self.blockchain().get_caller(), &output_payment);
 
+        self.min_liquidity_reserve_needed()
+            .update(|x| *x -= payment.amount);
+
         output_payment
     }
 
@@ -195,19 +215,199 @@ pub trait ControllerContract:
     }
 
     #[endpoint(claimControllerRewards)]
-    fn claim_controller_rewards(&self) {}
+    fn claim_controller_rewards(&self) {
+        let platforms = self.platforms();
 
+        for platform in platforms.iter() {
+            let sc_address = platform.sc_address; // will be used to call the platform sc
+
+            // claimRewards (call platform SC)
+            let claim_rewards_payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let usdc_token_id = self.usdc_token().get_token_id();
+
+            let mut rewards_payment =
+                EsdtTokenPayment::new(usdc_token_id.clone(), 0, BigUint::zero());
+
+            for payment in claim_rewards_payments.iter() {
+                if payment.token_identifier == usdc_token_id {
+                    rewards_payment.amount += payment.amount;
+                }
+                // send the other payments somewhere ?
+            }
+            // send rewards to vault  (TAKE A PERCENTAGE FOR US AND THEN SEND TO VAULT)
+            self.increase_reserve(rewards_payment);
+        }
+    }
+
+    // need a new name, rebalance looks shit
+
+    // i need to have the minimum liquidity reserve
+    // the minimum liquidity reserve is :
+    // the liquidity that hasn't been withdraw yet + (on unbond)
+    // the liquidity that will be withdraw in the next epoch(s) - need to define how much epochs +
+    // a margin liquidity for those who will force withdraw (a fixed margin amount or a percentage of our TVL?)
+
+    // if the total liquid reserve is > than the liquidity we need in the SC
+    // we'll invest the difference in the SC platforms following the given plateforms distribution
+    // if the reserve liquidity needed id < than the actual liquidity we have in the SC
+    // we'll withdraw from the SC platforms following the given plateforms distribution
     #[endpoint]
-    fn rebalance(&self) {}
+    fn rebalance(&self) {
+        self.update_min_liq_reserve_needed();
 
-    #[only_owner]
-    #[endpoint(addPlatform)]
-    fn add_platform(&self) {}
+        let min_liq_reserve_needed = self.min_liquidity_reserve_needed().get();
+        let liquidity_reserve = self.liquidity_reserve().get();
+        let liquidity_buffer = self.liquidity_buffer().get();
 
+        let total_liq_reserve = liquidity_reserve + liquidity_buffer;
+
+        if total_liq_reserve > min_liq_reserve_needed {
+            let liquidity_diff = total_liq_reserve - min_liq_reserve_needed;
+            self.invest(&liquidity_diff);
+        } else {
+            let liquidity_needed = min_liq_reserve_needed - total_liq_reserve;
+            self.withdraw_from_platform_contracts(&liquidity_needed);
+        }
+    }
+
+    fn invest(&self, total_amount: &BigUint) {
+        let platforms = self.platforms();
+        let total_weight = self.platforms_total_weight().get();
+
+        let mut left_payment_amount = total_amount.clone();
+        let mut used_weight = 0;
+
+        for platform in platforms.iter() {
+            let invest_amount = if used_weight + platform.weight == total_weight {
+                core::mem::take(&mut left_payment_amount)
+            } else {
+                let calculated_amount =
+                    total_amount * &BigUint::from(platform.weight) / &BigUint::from(total_weight);
+
+                left_payment_amount -= calculated_amount.clone();
+
+                calculated_amount
+            };
+            used_weight += platform.weight;
+
+            // deposit in the platform SC
+            let sc_address = platform.sc_address;
+            // deposit
+        }
+    }
+
+    fn withdraw_from_platform_contracts(&self, total_amount: &BigUint) {
+        let platforms = self.platforms();
+        let total_deposited = self.get_total_deposited();
+
+        let mut new_liquidity_amount = BigUint::zero();
+        let mut new_rewards = BigUint::zero();
+
+        for platform in platforms.iter() {
+            let amount_deposited = self.get_total_deposited_for_platform(platform.sc_address);
+            let amount_to_withdraw = amount_deposited * total_amount / &total_deposited;
+
+            // withdraw from the platform SC
+            let withdraw_result: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+
+            let withdraw_payment = withdraw_result.get(0);
+            let rewards_payment = withdraw_result.get(1);
+
+            new_liquidity_amount += withdraw_payment.amount;
+            new_rewards += rewards_payment.amount;
+        }
+        let rewards_payment =
+            EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, new_rewards);
+        // add clarity on variable names
+
+        self.increase_reserve(rewards_payment);
+        self.liquidity_reserve()
+            .update(|x| *x += new_liquidity_amount);
+    }
+
+    #[view(getTotalDeposited)]
+    fn get_total_deposited(&self) -> BigUint {
+        let platforms = self.platforms();
+        let mut total_deposited = BigUint::zero();
+
+        for platform in platforms.iter() {
+            let sc_address = platform.sc_address;
+            let amount_deposited = self.get_total_deposited_for_platform(sc_address);
+
+            total_deposited += amount_deposited;
+        }
+
+        total_deposited
+    }
+
+    fn get_total_deposited_for_platform(&self, sc_address: ManagedAddress) -> BigUint {
+        // get total deposited with proxy
+        BigUint::zero()
+    }
+
+    // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
+    // If the function is not called at every epoch, it loops to update all epochs that have not been updated.
+    // As a security, would it be useful to also add the liquidity needed for the current_epoch + 1 to be sure?
+    // I think it would be important to do it for at least current_epoch + 2 or 3
+    // Otherwise, I think we'll need to withdraw a lot of funds from the investments contracts.
+    fn update_min_liq_reserve_needed(&self) {
+        let current_epoch = self.blockchain().get_block_epoch();
+        let last_update = self.last_update_for_min_liq_reserve_needed().get();
+        let epoch_diff = current_epoch - last_update;
+
+        let mut liquidity = BigUint::zero();
+
+        for epoch in (current_epoch - epoch_diff + 1)..=current_epoch {
+            let liq_needed_for_epoch = self.liquidity_needed_for_epoch(epoch).get();
+            liquidity += liq_needed_for_epoch;
+        }
+
+        self.min_liquidity_reserve_needed()
+            .update(|x| *x += liquidity);
+        self.last_update_for_min_liq_reserve_needed()
+            .set(&current_epoch);
+    }
+
+    // We are also supposed to withdraw from all the platforms and then re-deposit with the new distribution.
+    // It will be done later.
     #[only_owner]
-    #[endpoint(setPlatformDistribution)]
-    fn set_platforms_distribution(&self) {
-        // quand on change la répartition alors on va withdraw + redeposit all dans cette fonction
+    #[endpoint(addPlatforms)]
+    fn add_platforms(
+        &self,
+        platforms: MultiValueEncoded<MultiValue3<ManagedBuffer, ManagedAddress, u64>>,
+    ) {
+        for platform in platforms.into_iter() {
+            let (name, sc_address, weight) = platform.into_tuple();
+
+            let platform_info = PlatformInfo {
+                name,
+                sc_address,
+                weight,
+            };
+            let is_new = self.platforms().insert(platform_info);
+            require!(is_new, "Platform already added");
+
+            self.platforms_total_weight().update(|x| *x += weight);
+        }
+    }
+
+    // I'm not sure this works (Maybe I have to loop on the indexes instead).
+    // We are also supposed to withdraw from all the platforms and then re-deposit with the new distribution.
+    // It will be done later.
+    #[only_owner]
+    #[endpoint(removePlatforms)]
+    fn remove_platforms(&self, sc_addresses: MultiValueEncoded<ManagedAddress>) {
+        for sc_address in sc_addresses.into_iter() {
+            let platforms = self.platforms();
+
+            for platform in platforms.iter() {
+                if platform.sc_address == sc_address {
+                    self.platforms().swap_remove(&platform);
+                    self.platforms_total_weight()
+                        .update(|x| *x -= platform.weight);
+                }
+            }
+        }
     }
 
     #[endpoint(setMinUnbondEpochs)]
@@ -237,8 +437,32 @@ pub trait ControllerContract:
     #[storage_mapper("minUnbondEpochs")]
     fn min_unbond_epochs(&self) -> SingleValueMapper<u64>;
 
+    #[view(getPlaforms)]
+    #[storage_mapper("platforms")]
+    fn platforms(&self) -> UnorderedSetMapper<PlatformInfo<Self::Api>>;
+
+    #[view(getPlatformsTotalWeight)]
+    #[storage_mapper("platformsTotalWeight")]
+    fn platforms_total_weight(&self) -> SingleValueMapper<u64>;
+
+    #[view(getUsdcTokenId)]
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
+
+    #[storage_mapper("liquidityNeededForEpoch")]
+    fn liquidity_needed_for_epoch(&self, epoch: u64) -> SingleValueMapper<BigUint>;
+
+    #[storage_mapper("minLiquidityReserveNeeded")]
+    fn min_liquidity_reserve_needed(&self) -> SingleValueMapper<BigUint>;
+
+    // In the future, it would be interesting for the liquidity buffer to be dynamic.
+    // It would represent a percentage of the total value locked.
+    #[storage_mapper("liquidityBuffer")]
+    fn liquidity_buffer(&self) -> SingleValueMapper<BigUint>;
+
+    // too long, need a new naming
+    #[storage_mapper("lastUpdateForMinLiqReserveNeeded")]
+    fn last_update_for_min_liq_reserve_needed(&self) -> SingleValueMapper<u64>;
 
     #[view(getForceWithdrawFeesPercentage)]
     #[storage_mapper("forceWithdrawFeesPercentage")]

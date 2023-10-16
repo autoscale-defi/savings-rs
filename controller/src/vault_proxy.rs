@@ -8,6 +8,13 @@ pub trait VaultModule {
             .execute_on_dest_context::<IgnoreValue>();
     }
 
+    fn increase_reserve(&self, payment: EsdtTokenPayment) {
+        self.vault_proxy(self.vault_addr().get())
+            .increase_reserve()
+            .with_esdt_transfer(payment)
+            .execute_on_dest_context::<IgnoreValue>();
+    }
+
     #[proxy]
     fn vault_proxy(&self, sc_address: ManagedAddress) -> vault::Proxy<Self::Api>;
 

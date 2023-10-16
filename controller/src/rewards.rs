@@ -1,11 +1,12 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
-use crate::token::SavingsTokenAttributes;
 use super::token;
+use crate::token::SavingsTokenAttributes;
+use multiversx_sc_modules::default_issue_callbacks;
 
 #[multiversx_sc::module]
-pub trait RewardsModule: token::TokenModule {
+pub trait RewardsModule: token::TokenModule + default_issue_callbacks::DefaultIssueCallbacksModule {
     /// Updates the rewards per share based on the current block number and the last time the rewards were updated.
     ///
     /// We use a static rewards per share per block and not a dynamic one based on the supply of the savings tokens (shares).
@@ -18,23 +19,22 @@ pub trait RewardsModule: token::TokenModule {
     /// - we want to compute the rewards for a user (it's not even mandatory but it's a calculation that we would have done
     ///   on the fly anyway. We will use the compute rewards function also as the view function to get the rewards of a user in real time off-chain)
     fn update_rewards_per_share(&self) {
-        require!(self.produce_rewards_enabled().get(), "Rewards are disabled");
-
         let last_update_block_nonce = self.last_update_block_nonce().get();
         let current_block_nonce = self.blockchain().get_block_nonce();
+        
+        let rewards_enabled = self.produce_rewards_enabled().get();
         let blocks_since_last_update = current_block_nonce - last_update_block_nonce;
-        if blocks_since_last_update == 0 {
-            return;
+
+        if blocks_since_last_update > 0 && rewards_enabled {
+            let computed_rewards_per_share_since_last_update = self
+                .rewards_per_share_per_block()
+                .get()
+                .mul(blocks_since_last_update);
+
+            self.rewards_per_share().update(|x| {
+                *x += computed_rewards_per_share_since_last_update;
+            });
         }
-
-        let computed_rewards_per_share_since_last_update = self
-            .rewards_per_share_per_block()
-            .get()
-            .mul(blocks_since_last_update);
-
-        self.rewards_per_share().update(|x| {
-            *x += computed_rewards_per_share_since_last_update;
-        });
 
         self.last_update_block_nonce().set(current_block_nonce);
     }
@@ -57,8 +57,8 @@ pub trait RewardsModule: token::TokenModule {
         let mut rewards = savings_token_amount
             * &(self.rewards_per_share().get() - &attributes.initial_rewards_per_share);
 
-        rewards += &attributes.accumulated_rewards * savings_token_amount
-            / &attributes.total_shares;
+        rewards +=
+            &attributes.accumulated_rewards * savings_token_amount / &attributes.total_shares;
 
         rewards
     }

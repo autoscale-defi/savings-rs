@@ -14,3 +14,10 @@ pub struct ControllerParametersDTO<M: ManagedTypeApi> {
     pub savings_token_id: TokenIdentifier<M>,
     pub unbond_token_id: TokenIdentifier<M>,
 }
+
+#[derive(TopEncode, TopDecode, NestedEncode, NestedDecode, TypeAbi)]
+pub struct PlatformInfo<M: ManagedTypeApi> {
+    pub name: ManagedBuffer<M>,
+    pub sc_address: ManagedAddress<M>,
+    pub weight: u64,
+}

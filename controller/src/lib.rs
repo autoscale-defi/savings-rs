@@ -12,6 +12,7 @@ pub mod phase;
 pub mod rewards;
 pub mod token;
 pub mod vault_proxy;
+pub mod platform_proxy;
 
 const PERCENTAGE_DIVIDER: u64 = 10000;
 
@@ -21,6 +22,7 @@ pub trait ControllerContract:
     + rewards::RewardsModule
     + phase::PhaseModule
     + vault_proxy::VaultModule
+    + platform_proxy::PlatformModule
     + default_issue_callbacks::DefaultIssueCallbacksModule
 {
     // todo add fees_address

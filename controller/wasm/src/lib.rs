@@ -27,7 +27,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         unbond => unbond
         claimRewards => claim_rewards
         claimControllerRewards => claim_controller_rewards
-        rebalance => rebalance
+        manageLiquidity => manage_liquidity
         getTotalDeposited => get_total_deposited
         addPlatforms => add_platforms
         removePlatforms => remove_platforms

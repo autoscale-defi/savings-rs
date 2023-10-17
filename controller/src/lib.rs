@@ -40,6 +40,9 @@ pub trait ControllerContract:
         self.performance_fees().set(performance_fees);
         self.force_withdraw_fees_percentage()
             .set(withdraw_fees_perc);
+
+        self.last_update_for_min_liq_reserve_needed()
+            .set_if_empty(self.blockchain().get_block_epoch());
     }
 
     /// User deposits USDC and receives savings tokens

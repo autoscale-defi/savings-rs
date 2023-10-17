@@ -15,9 +15,9 @@ pub trait RewardsModule: default_issue_callbacks::DefaultIssueCallbacksModule {
     /// doesn't affect the linear increase of the rewards per share.
     /// The linear increase of the rewards per share is only affected by a manual change of the rewards per share per block.
     ///
-    /// This function has to be called when:
+    /// This function has to be called:
     /// - right BEFORE we change the rewards per share per block manually
-    /// - we want to compute the rewards for a user (it's not even mandatory but it's a calculation that we would have done
+    /// - when we want to compute the rewards for a user (it's not even mandatory but it's a calculation that we would have done
     ///   on the fly anyway. We will use the compute rewards function also as the view function to get the rewards of a user in real time off-chain)
     fn update_rewards_per_share(&self) {
         let last_update_block_nonce = self.last_update_block_nonce().get();

@@ -1,6 +1,7 @@
 multiversx_sc::derive_imports!();
 multiversx_sc::imports!();
 
+/// A Struct to export all the parameters of the controller off-chain
 #[derive(TopEncode, TypeAbi)]
 pub struct ControllerParametersDTO<M: ManagedTypeApi> {
     pub phase: Phase,

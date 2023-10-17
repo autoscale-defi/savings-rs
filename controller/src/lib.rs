@@ -14,6 +14,7 @@ pub mod token;
 pub mod vault_proxy;
 
 const PERCENTAGE_DIVIDER: u64 = 10000;
+const REWARDS_PRECISION: u64 = 1000000000000; // 1e12
 
 #[multiversx_sc::contract]
 pub trait ControllerContract:
@@ -138,7 +139,11 @@ pub trait ControllerContract:
                 .update(|x| *x += rewards.total_shares.clone());
         }
 
-        self.send_rewards(self.blockchain().get_caller(), rewards.accumulated_rewards);
+        // user wants to withdraw so even if the real amount is 0 (rounded), the tx goes through and positions are closed
+        self.send_rewards(
+            self.blockchain().get_caller(),
+            self.get_real_usdc_rewards_amount(&rewards.accumulated_rewards),
+        );
         self.burn_savings_tokens(&payments);
 
         let caller = self.blockchain().get_caller();
@@ -194,6 +199,10 @@ pub trait ControllerContract:
         let rewards = self.merge_savings_tokens(&payments);
         require!(rewards.total_shares > 0, "Payment amount cannot be zero");
 
+        let real_usdc_rewards_amount =
+            self.get_real_usdc_rewards_amount(&rewards.accumulated_rewards);
+        require!(real_usdc_rewards_amount > 0, "No rewards to claim");
+
         let new_savings_token_attr = SavingsTokenAttributes {
             initial_rewards_per_share: self.rewards_per_share().get(),
             accumulated_rewards: BigUint::zero(),
@@ -207,11 +216,15 @@ pub trait ControllerContract:
 
         let caller = self.blockchain().get_caller();
 
-        self.send_rewards(caller.clone(), rewards.accumulated_rewards);
+        self.send_rewards(caller.clone(), real_usdc_rewards_amount);
         self.send()
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);
 
         // should return output payments? but same as withdraw, should we first return the payment rewards from the vault?
+    }
+
+    fn get_real_usdc_rewards_amount(&self, big_precision_amount: &BigUint) -> BigUint {
+        big_precision_amount / REWARDS_PRECISION
     }
 
     #[endpoint(claimControllerRewards)]

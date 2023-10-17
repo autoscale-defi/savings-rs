@@ -35,7 +35,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         registerUnbondToken => register_unbond_token
         getSavingsTokenId => savings_token
         getUnbondToken => unbond_token
-        calculateRewardsForGivenPosition => calculate_rewards
+        calculateRewardsForGivenPosition => calculate_rewards_view
         setRewardsPerSharePerBlock => set_rewards_per_share_per_block
         setProduceRewardsEnabled => set_produce_rewards_enabled
         getRewardsPerSharePerBlock => rewards_per_share_per_block

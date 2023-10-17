@@ -47,7 +47,6 @@ pub trait RewardsModule: default_issue_callbacks::DefaultIssueCallbacksModule {
     /// - you want to know off-chain the rewards of a given position
     /// - A user claims his rewards
     /// - We merge multiple positions into one (the sum of the old positions ends up in the accumulated rewards of the new position)
-    #[view(calculateRewardsForGivenPosition)]
     fn calculate_rewards(
         &self,
         savings_token_amount: &BigUint,
@@ -62,6 +61,15 @@ pub trait RewardsModule: default_issue_callbacks::DefaultIssueCallbacksModule {
             &attributes.accumulated_rewards * savings_token_amount / &attributes.total_shares;
 
         rewards
+    }
+
+    #[view(calculateRewardsForGivenPosition)]
+    fn calculate_rewards_view(
+        &self,
+        savings_token_amount: &BigUint,
+        attributes: &SavingsTokenAttributes<Self::Api>,
+    ) -> BigUint {
+        self.get_real_usdc_rewards_amount(&self.calculate_rewards(savings_token_amount, attributes))
     }
 
     #[only_owner]

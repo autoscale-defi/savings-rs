@@ -42,6 +42,7 @@ pub trait ControllerContract:
             .set(&withdraw_fees_perc);
     }
 
+    /// User deposits USDC and receives savings tokens
     #[payable("*")]
     #[endpoint]
     fn deposit(&self) -> EsdtTokenPayment<Self::Api> {
@@ -73,6 +74,8 @@ pub trait ControllerContract:
         new_savings_token
     }
 
+    /// User withdraws unbond tokens from savings tokens, or directly USDC by paying a fee
+    /// withdraw also triggers the claimRewards function
     #[payable("*")]
     #[endpoint]
     fn withdraw(&self, opt_force_withdraw: OptionalValue<bool>) -> WithdrawResultType<Self::Api> {
@@ -123,6 +126,8 @@ pub trait ControllerContract:
         (output_payment, rewards_payment).into()
     }
 
+    /// User send unbond tokens to the contract and receives USDC if the unlock epoch is reached
+    /// In the future, this endpoint should accept a list of unbond tokens
     #[payable("*")]
     #[endpoint]
     fn unbond(&self) -> EsdtTokenPayment {
@@ -160,6 +165,9 @@ pub trait ControllerContract:
         output_payment
     }
 
+    /// User claims rewards from savings tokens
+    /// savings tokens are burned
+    /// new savings tokens are minted with the new rewards per share
     #[payable("*")]
     #[endpoint(claimRewards)]
     fn claim_rewards(&self) -> ClaimRewardsResultType<Self::Api> {
@@ -193,6 +201,9 @@ pub trait ControllerContract:
         (new_savings_token, rewards_payment).into()
     }
 
+    /// Admin wallet (or user) can call this endpoint
+    /// it claims rewards from all platforms and send them to the vault
+    /// Performance fees are taken from the rewards and sent to the fees address
     #[endpoint(claimControllerRewards)]
     fn claim_controller_rewards(&self) {
         let platforms = self.platforms();
@@ -230,16 +241,10 @@ pub trait ControllerContract:
         }
     }
 
-    // i need to have the minimum liquidity reserve
-    // the minimum liquidity reserve is :
-    // the liquidity that hasn't been withdraw yet + (on unbond)
-    // the liquidity that will be withdraw in the next epoch(s) - need to define how much epochs +
-    // a margin liquidity for those who will force withdraw (a fixed margin amount or a percentage of our TVL?)
-
-    // if the total liquid reserve is > than the liquidity we need in the SC
-    // we'll invest the difference in the SC platforms following the given plateforms distribution
-    // if the reserve liquidity needed id < than the actual liquidity we have in the SC
-    // we'll withdraw from the SC platforms following the given plateforms distribution
+    /// Admin wallet (or user) can call this endpoint
+    /// it manages the liquidity reserve
+    /// it updates the minimum liquidity reserve needed
+    /// it invests or withdraws from the platforms to ensure the minimum liquidity reserve
     #[endpoint(manageLiquidity)]
     fn manage_liquidity(&self) {
         self.update_min_liq_reserve_needed();
@@ -282,6 +287,9 @@ pub trait ControllerContract:
             .set(&current_epoch);
     }
 
+    /// This function is called onyl from manage_liquidity endpoint
+    /// It invests a given amount in all platforms
+    /// If some dust is left, it is invested in the last platform
     fn invest(&self, total_amount: &BigUint) {
         let platforms = self.platforms();
         let total_weight = self.platforms_total_weight().get();
@@ -307,6 +315,8 @@ pub trait ControllerContract:
         }
     }
 
+    /// This function is called only from manage_liquidity endpoint
+    /// It withdraws a given amount from all platforms
     fn withdraw_from_platform_contracts(&self, total_amount: &BigUint) {
         let platforms = self.platforms();
         let total_deposited = self.get_total_deposited();

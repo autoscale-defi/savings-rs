@@ -41,6 +41,7 @@ pub trait ConfigModule {
                     self.platforms().swap_remove(&platform);
                     self.platforms_total_weight()
                         .update(|x| *x -= platform.weight);
+                    break;
                 }
             }
         }
@@ -116,10 +117,10 @@ pub trait ConfigModule {
     #[storage_mapper("forceWithdrawFeesPercentage")]
     fn force_withdraw_fees_percentage(&self) -> SingleValueMapper<u64>; // todo
 
-    // In the future, it would be interesting for the liquidity buffer to be dynamic.
-    // It would represent a percentage of the total value locked.
+    /// In the future, it would be interesting for the liquidity buffer to be dynamic.
+    /// It would represent a percentage of the total value locked.
     #[storage_mapper("liquidityBuffer")]
-    fn liquidity_buffer(&self) -> SingleValueMapper<BigUint>; // todo
+    fn liquidity_buffer(&self) -> SingleValueMapper<BigUint>;
 
     #[storage_mapper("minUnbondEpochs")]
     fn min_unbond_epochs(&self) -> SingleValueMapper<u64>;

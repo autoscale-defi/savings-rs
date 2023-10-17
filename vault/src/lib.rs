@@ -7,7 +7,7 @@ pub trait VaultContract {
     #[init]
     fn init(&self, usdc_token_id: TokenIdentifier, controller_addr: ManagedAddress) {
         self.usdc_token_id().set_if_empty(usdc_token_id);
-        self.controller_addr().set_if_empty(&controller_addr);
+        self.controller_addr().set(&controller_addr);
     }
 
     #[payable("*")]

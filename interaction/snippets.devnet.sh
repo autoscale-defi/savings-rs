@@ -137,3 +137,7 @@ setVaultAddress() {
 getRewardsPerShare() {
     mxpy --verbose contract query ${CONTROLLER_ADDR} --function="getRewardsPerShare" --proxy=${PROXY} 
 }
+
+getControllerAddress() {
+    mxpy --verbose contract query ${VAULT_ADDR} --function="getControllerAddress" --proxy=${PROXY} 
+}

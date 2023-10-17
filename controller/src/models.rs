@@ -1,5 +1,3 @@
-use crate::phase::Phase;
-
 multiversx_sc::derive_imports!();
 multiversx_sc::imports!();
 
@@ -20,4 +18,22 @@ pub struct PlatformInfo<M: ManagedTypeApi> {
     pub name: ManagedBuffer<M>,
     pub sc_address: ManagedAddress<M>,
     pub weight: u64,
+}
+
+#[derive(TypeAbi, TopEncode, TopDecode)]
+pub struct SavingsTokenAttributes<M: ManagedTypeApi> {
+    pub initial_rewards_per_share: BigUint<M>,
+    pub accumulated_rewards: BigUint<M>,
+    pub total_shares: BigUint<M>,
+}
+
+#[derive(TypeAbi, TopEncode, TopDecode)]
+pub struct UnbondTokenAttributes {
+    pub unlock_epoch: u64,
+}
+
+#[derive(TypeAbi, TopEncode, TopDecode, NestedEncode, Clone)]
+pub enum Phase {
+    Accumulation,
+    Depletion,
 }

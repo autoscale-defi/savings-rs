@@ -1,7 +1,9 @@
 multiversx_sc::imports!();
 
+use super::config;
+
 #[multiversx_sc::module]
-pub trait PlatformModule {
+pub trait ProxyModule: config::ConfigModule {
     fn invest_in_platform(&self, sc_address: ManagedAddress, amount: BigUint) {
         let payment = EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, amount);
 
@@ -11,7 +13,11 @@ pub trait PlatformModule {
             .execute_on_dest_context::<IgnoreValue>();
     }
 
-    fn withdraw_from_platform(&self, sc_address: ManagedAddress, amount: BigUint) -> ManagedVec<EsdtTokenPayment> {
+    fn withdraw_from_platform(
+        &self,
+        sc_address: ManagedAddress,
+        amount: BigUint,
+    ) -> ManagedVec<EsdtTokenPayment> {
         let payment = EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, amount.clone());
 
         self.platform_proxy(sc_address)
@@ -20,7 +26,10 @@ pub trait PlatformModule {
             .execute_on_dest_context()
     }
 
-    fn claim_rewards_for_platform(&self, sc_address: ManagedAddress) -> ManagedVec<EsdtTokenPayment> {
+    fn claim_rewards_for_platform(
+        &self,
+        sc_address: ManagedAddress,
+    ) -> ManagedVec<EsdtTokenPayment> {
         self.platform_proxy(sc_address)
             .claim_rewards_endpoint()
             .execute_on_dest_context()
@@ -32,9 +41,22 @@ pub trait PlatformModule {
             .execute_on_dest_context()
     }
 
+    fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) {
+        self.vault_proxy(self.vault_addr().get())
+            .send_rewards(destination, amount)
+            .execute_on_dest_context::<IgnoreValue>();
+    }
+
+    fn increase_reserve(&self, payment: EsdtTokenPayment) {
+        self.vault_proxy(self.vault_addr().get())
+            .increase_reserve()
+            .with_esdt_transfer(payment)
+            .execute_on_dest_context::<IgnoreValue>();
+    }
+
     #[proxy]
     fn platform_proxy(&self, sc_address: ManagedAddress) -> platform::Proxy<Self::Api>;
 
-    #[storage_mapper("usdcTokenId")]
-    fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
+    #[proxy]
+    fn vault_proxy(&self, sc_address: ManagedAddress) -> vault::Proxy<Self::Api>;
 }

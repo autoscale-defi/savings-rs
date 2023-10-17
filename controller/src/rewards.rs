@@ -1,14 +1,13 @@
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
-use super::token;
-use crate::token::SavingsTokenAttributes;
+use crate::models::SavingsTokenAttributes;
 use multiversx_sc_modules::default_issue_callbacks;
 
+const REWARDS_PRECISION: u64 = 1000000000000; // 1e12
+
 #[multiversx_sc::module]
-pub trait RewardsModule:
-    token::TokenModule + default_issue_callbacks::DefaultIssueCallbacksModule
-{
+pub trait RewardsModule: default_issue_callbacks::DefaultIssueCallbacksModule {
     /// Updates the rewards per share based on the current block number and the last time the rewards were updated.
     ///
     /// We use a static rewards per share per block and not a dynamic one based on the supply of the savings tokens (shares).
@@ -65,51 +64,6 @@ pub trait RewardsModule:
         rewards
     }
 
-    /// Merges multiple positions into one.
-    ///
-    /// if called from the deposit function, this function will be called to merge the old positions into one.
-    /// You will still have to:
-    /// - burn the old positions
-    /// - sum up the total_shares of this new position with the amount of the new USDC position
-    /// - mint the new position
-    ///
-    /// if called from the withdraw or claim function, this function will be called to merge all the positions into one.
-    /// You will still have to:
-    /// - burn the old positions
-    /// - take the new position and send it as rewards to the user
-    /// - For withdraw:
-    ///         - Create the unbond token position
-    /// - For claim:
-    ///         - Create a new position with the same amount of shares as the old positions
-    ///
-    /// if called from a "MergePositions" endpoint, this function will be called to merge all the positions into one.
-    /// You will still have to:
-    /// - burn the old positions
-    /// - Mint the new position returned by this function
-    /// - Send the new position to the user
-    fn merge_savings_tokens(
-        &self,
-        payments: &ManagedVec<EsdtTokenPayment<Self::Api>>,
-    ) -> SavingsTokenAttributes<Self::Api> {
-        let mut new_accumulated_rewards = BigUint::zero();
-        let mut new_total_shares = BigUint::zero();
-
-        for payment in payments.into_iter() {
-            let savings_token_attr: SavingsTokenAttributes<Self::Api> = self
-                .savings_token()
-                .get_token_attributes(payment.token_nonce);
-
-            new_accumulated_rewards += self.calculate_rewards(&payment.amount, &savings_token_attr);
-            new_total_shares += payment.amount;
-        }
-
-        SavingsTokenAttributes {
-            initial_rewards_per_share: self.rewards_per_share().get(),
-            accumulated_rewards: new_accumulated_rewards,
-            total_shares: new_total_shares,
-        }
-    }
-
     #[only_owner]
     #[endpoint(setRewardsPerSharePerBlock)]
     fn set_rewards_per_share_per_block(&self, new_rewards_per_share_per_block: BigUint) {
@@ -125,6 +79,17 @@ pub trait RewardsModule:
         self.produce_rewards_enabled().set(enabled);
     }
 
+    fn get_real_usdc_rewards_amount(&self, big_precision_amount: &BigUint) -> BigUint {
+        big_precision_amount / REWARDS_PRECISION
+    }
+
+    /// The amount of rewards per share that are produced in one block.
+    /// Can only be changed manually by the owner.
+    /// This is a variation of the APR.
+    #[view(getRewardsPerSharePerBlock)]
+    #[storage_mapper("rewardsPerSharePerBlock")]
+    fn rewards_per_share_per_block(&self) -> SingleValueMapper<BigUint>;
+
     #[view(isProduceRewardsEnabled)]
     #[storage_mapper("produceRewardsEnabled")]
     fn produce_rewards_enabled(&self) -> SingleValueMapper<bool>;
@@ -136,11 +101,4 @@ pub trait RewardsModule:
     #[view(getRewardsPerShare)]
     #[storage_mapper("rewardsPerShare")]
     fn rewards_per_share(&self) -> SingleValueMapper<BigUint>;
-
-    /// The amount of rewards per share that are produced in one block.
-    /// Can only be changed manually by the owner.
-    /// This is a variation of the APR.
-    #[view(getRewardsPerSharePerBlock)]
-    #[storage_mapper("rewardsPerSharePerBlock")]
-    fn rewards_per_share_per_block(&self) -> SingleValueMapper<BigUint>;
 }

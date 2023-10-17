@@ -231,7 +231,7 @@ pub trait ControllerContract:
                 rewards_payment.amount.clone() * performance_fees / PERCENTAGE_DIVIDER;
             self.send_fees(&fees_amount);
 
-            rewards_payment.amount -= performance_fees;
+            rewards_payment.amount -= fees_amount;
             self.increase_reserve(rewards_payment);
         }
     }

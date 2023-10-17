@@ -256,13 +256,13 @@ pub trait ControllerContract:
         let liquidity_reserve = self.liquidity_reserve().get();
         let liquidity_buffer = self.liquidity_buffer().get();
 
-        let total_liq_reserve = liquidity_reserve + liquidity_buffer;
+        let total_liq_needed = min_liq_reserve_needed + liquidity_buffer;
 
-        if total_liq_reserve > min_liq_reserve_needed {
-            let liquidity_diff = total_liq_reserve - min_liq_reserve_needed;
+        if liquidity_reserve > total_liq_needed {
+            let liquidity_diff = liquidity_reserve - total_liq_needed;
             self.invest(&liquidity_diff);
         } else {
-            let liquidity_needed = min_liq_reserve_needed - total_liq_reserve;
+            let liquidity_needed = total_liq_needed - liquidity_reserve;
             self.withdraw_from_platform_contracts(&liquidity_needed);
         }
     }

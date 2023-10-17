@@ -41,10 +41,10 @@ pub trait ProxyModule: config::ConfigModule {
             .execute_on_dest_context()
     }
 
-    fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) {
+    fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) -> EsdtTokenPayment {
         self.vault_proxy(self.vault_addr().get())
             .send_rewards(destination, amount)
-            .execute_on_dest_context::<IgnoreValue>();
+            .execute_on_dest_context()
     }
 
     fn increase_reserve(&self, payment: EsdtTokenPayment) {

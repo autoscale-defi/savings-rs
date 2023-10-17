@@ -26,20 +26,19 @@ pub trait VaultContract {
     }
 
     #[endpoint(sendRewards)]
-    fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) {
+    fn send_rewards(&self, destination: ManagedAddress, amount: BigUint) -> EsdtTokenPayment {
         self.require_caller_is_controller();
         require!(
             self.rewards_reserve().get() >= amount,
             "Not enough rewards reserve"
         );
+        let payment = EsdtTokenPayment::new(self.usdc_token_id().get_token_id(), 0, amount.clone());
 
-        self.send().direct_esdt(
-            &destination,
-            &self.usdc_token_id().get_token_id(),
-            0,
-            &amount,
-        );
+        self.send()
+            .direct_non_zero_esdt_payment(&destination, &payment);
         self.rewards_reserve().update(|r| *r -= amount);
+
+        payment
     }
 
     fn require_caller_is_controller(&self) {

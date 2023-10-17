@@ -1,5 +1,5 @@
 {
-    "name": "saving-rs",
+    "name": "platform",
     "steps": [
         {
             "step": "externalSteps",

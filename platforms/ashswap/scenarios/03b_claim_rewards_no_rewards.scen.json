@@ -1,5 +1,5 @@
 {
-    "name": "saving-rs",
+    "name": "platform",
     "steps": [
         {
             "step": "externalSteps",
@@ -37,7 +37,7 @@
                 "sc:saving": {
                     "owner": "address:saving_owner",
                     "nonce": "0",
-                    "code": "file:../output/saving-rs.wasm",
+                    "code": "file:../output/platform.wasm",
                     "esdt": {
                         "str:USDCTBFA-abcdef": {
                             "instances": [

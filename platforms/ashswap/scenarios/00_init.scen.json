@@ -1,5 +1,5 @@
 {
-    "name": "saving-rs",
+    "name": "platform",
     "steps": [
         {
             "step": "externalSteps",
@@ -48,7 +48,7 @@
             "txId": "deploy saving",
             "tx": {
                 "from": "address:saving_owner",
-                "contractCode": "file:../output/saving-rs.wasm",
+                "contractCode": "file:../output/platform.wasm",
                 "arguments": [
                     "address:controller_contract",
                     "sc:ats_ash_holder",
@@ -91,7 +91,7 @@
                 "sc:saving": {
                     "owner": "address:saving_owner",
                     "nonce": "0",
-                    "code": "file:../output/saving-rs.wasm",
+                    "code": "file:../output/platform.wasm",
                     "storage": {
                         "str:controller_address": "address:controller_contract",
                         "str:holder_address": "sc:ats_ash_holder",

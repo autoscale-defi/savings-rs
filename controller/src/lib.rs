@@ -9,6 +9,7 @@ multiversx_sc::imports!();
 
 pub mod models;
 pub mod phase;
+pub mod platform_proxy;
 pub mod rewards;
 pub mod token;
 pub mod vault_proxy;
@@ -22,9 +23,9 @@ pub trait ControllerContract:
     + rewards::RewardsModule
     + phase::PhaseModule
     + vault_proxy::VaultModule
+    + platform_proxy::PlatformModule
     + default_issue_callbacks::DefaultIssueCallbacksModule
 {
-    // todo add fees_address
     #[init]
     fn init(
         &self,
@@ -77,10 +78,19 @@ pub trait ControllerContract:
         if fees_percentage == 0 {
             return amount.clone();
         }
+
         let fees_amount = amount * fees_percentage / PERCENTAGE_DIVIDER;
-        // send the fees somewhere
+        self.send_fees(&fees_amount);
 
         amount - &fees_amount
+    }
+
+    fn send_fees(&self, fees_amount: &BigUint) {
+        let fees_address = self.fees_address().get();
+        let usdc_token_id = self.usdc_token().get_token_id();
+
+        self.send()
+            .direct_esdt(&fees_address, &usdc_token_id, 0, fees_amount);
     }
 
     fn create_savings_token_by_merging(
@@ -116,9 +126,9 @@ pub trait ControllerContract:
         if force_withdraw {
             let fees_percentage = self.force_withdraw_fees_percentage().get();
             let fees_amount = rewards.total_shares.clone() * fees_percentage / PERCENTAGE_DIVIDER;
-            let savings_token_without_fees = rewards.total_shares.clone() - fees_amount;
+            let savings_token_without_fees = &rewards.total_shares - &fees_amount;
 
-            // send the fees somewhere
+            self.send_fees(&fees_amount);
 
             output_payments.push(EsdtTokenPayment::new(
                 self.usdc_token().get_token_id(),
@@ -150,6 +160,7 @@ pub trait ControllerContract:
         self.send().direct_multi(&caller, &output_payments);
 
         // Rewards are not in the output_payments, maybe we should return it from the vault endpoint first?
+        // Rewards should be in output_payments
         output_payments
     }
 
@@ -220,7 +231,7 @@ pub trait ControllerContract:
         self.send()
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);
 
-        // should return output payments? but same as withdraw, should we first return the payment rewards from the vault?
+        // should return output payments? but same as withdraw, should we first return the payment rewards from the vault? YES
     }
 
     fn get_real_usdc_rewards_amount(&self, big_precision_amount: &BigUint) -> BigUint {
@@ -233,9 +244,10 @@ pub trait ControllerContract:
 
         for platform in platforms.iter() {
             let sc_address = platform.sc_address; // will be used to call the platform sc
+            let fees_address = self.fees_address().get();
 
             // claimRewards (call platform SC)
-            let claim_rewards_payments: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let claim_rewards_payments = self.claim_rewards_for_platform(sc_address);
             let usdc_token_id = self.usdc_token().get_token_id();
 
             let mut rewards_payment =
@@ -244,10 +256,19 @@ pub trait ControllerContract:
             for payment in claim_rewards_payments.iter() {
                 if payment.token_identifier == usdc_token_id {
                     rewards_payment.amount += payment.amount;
+                } else {
+                    self.send().direct_esdt(
+                        &fees_address,
+                        &payment.token_identifier,
+                        0,
+                        &payment.amount,
+                    );
                 }
-                // send the other payments somewhere ?
             }
             // send rewards to vault  (TAKE A PERCENTAGE FOR US AND THEN SEND TO VAULT)
+            // let perfomances_fees = something
+            // take the fees
+            // send the remaining in rewards
             self.increase_reserve(rewards_payment);
         }
     }
@@ -301,9 +322,8 @@ pub trait ControllerContract:
             };
             used_weight += platform.weight;
 
-            // deposit in the platform SC
             let sc_address = platform.sc_address;
-            // deposit
+            self.invest_in_platform(sc_address, invest_amount);
         }
     }
 
@@ -315,11 +335,12 @@ pub trait ControllerContract:
         let mut new_rewards = BigUint::zero();
 
         for platform in platforms.iter() {
-            let amount_deposited = self.get_total_deposited_for_platform(platform.sc_address);
+            let sc_address = platform.sc_address;
+
+            let amount_deposited = self.get_total_deposited_for_platform(sc_address.clone());
             let amount_to_withdraw = amount_deposited * total_amount / &total_deposited;
 
-            // withdraw from the platform SC
-            let withdraw_result: ManagedVec<EsdtTokenPayment> = ManagedVec::new();
+            let withdraw_result = self.withdraw_from_platform(sc_address, amount_to_withdraw);
 
             let withdraw_payment = withdraw_result.get(0);
             let rewards_payment = withdraw_result.get(1);
@@ -329,7 +350,6 @@ pub trait ControllerContract:
         }
         let rewards_payment =
             EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, new_rewards);
-        // add clarity on variable names
 
         self.increase_reserve(rewards_payment);
         self.liquidity_reserve()
@@ -349,11 +369,6 @@ pub trait ControllerContract:
         }
 
         total_deposited
-    }
-
-    fn get_total_deposited_for_platform(&self, sc_address: ManagedAddress) -> BigUint {
-        // get total deposited with proxy
-        BigUint::zero()
     }
 
     // When this function is called, we update the minimum reserved liquidity we need to ensure withdrawals.
@@ -426,6 +441,12 @@ pub trait ControllerContract:
         self.min_unbond_epochs().set(min_unbond_epochs);
     }
 
+    #[only_owner]
+    #[endpoint(setFeesAddress)]
+    fn set_fees_address(&self, fees_address: ManagedAddress) {
+        self.fees_address().set(&fees_address);
+    }
+
     #[view(getControllerParameters)]
     fn get_controller_parameters(&self) -> ControllerParametersDTO<Self::Api> {
         let phase = self.get_phase();
@@ -456,10 +477,6 @@ pub trait ControllerContract:
     #[storage_mapper("platformsTotalWeight")]
     fn platforms_total_weight(&self) -> SingleValueMapper<u64>;
 
-    #[view(getUsdcTokenId)]
-    #[storage_mapper("usdcTokenId")]
-    fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;
-
     #[storage_mapper("liquidityNeededForEpoch")]
     fn liquidity_needed_for_epoch(&self, epoch: u64) -> SingleValueMapper<BigUint>;
 
@@ -478,4 +495,7 @@ pub trait ControllerContract:
     #[view(getForceWithdrawFeesPercentage)]
     #[storage_mapper("forceWithdrawFeesPercentage")]
     fn force_withdraw_fees_percentage(&self) -> SingleValueMapper<u64>;
+
+    #[storage_mapper("feesAddress")]
+    fn fees_address(&self) -> SingleValueMapper<ManagedAddress>;
 }

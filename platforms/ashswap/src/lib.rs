@@ -260,4 +260,9 @@ pub trait AshSwapPlatformContract: ContractBase
         results
     }
 
+    #[view(getDepositedAssets)]
+    fn get_deposited_assets(&self) -> BigUint {
+        self.deposited_assets().get()
+    }
+
 }

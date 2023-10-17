@@ -22,3 +22,6 @@ version = "0.43.4"
 
 [dependencies.vault]
 path = "../vault"
+
+[dependencies.platform]
+path = "../platforms/ashswap"

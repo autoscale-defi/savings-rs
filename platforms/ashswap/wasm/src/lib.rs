@@ -19,7 +19,7 @@ multiversx_sc_wasm_adapter::allocator!();
 multiversx_sc_wasm_adapter::panic_handler!();
 
 multiversx_sc_wasm_adapter::endpoints! {
-    saving_rs
+    platform
     (
         init => init
         deposit => deposit

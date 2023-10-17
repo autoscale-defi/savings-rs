@@ -1,5 +1,5 @@
 [package]
-name = "saving-rs-meta"
+name = "platform-meta"
 version = "0.0.0"
 edition = "2018"
 publish = false
@@ -7,7 +7,7 @@ authors = [ "you",]
 
 [dev-dependencies]
 
-[dependencies.saving-rs]
+[dependencies.platform]
 path = ".."
 
 [dependencies.multiversx-sc-meta]

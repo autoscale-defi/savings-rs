@@ -1,5 +1,5 @@
 [package]
-name = "platform"
+name = "controller"
 version = "0.0.0"
 authors = [ "you",]
 edition = "2018"
@@ -16,3 +16,12 @@ version = "0.43.4"
 
 [dev-dependencies.multiversx-sc-scenario]
 version = "0.43.4"
+
+[dependencies.multiversx-sc-modules]
+version = "0.43.4"
+
+[dependencies.vault]
+path = "../vault"
+
+[dependencies.platform]
+path = "../platforms/ashswap"

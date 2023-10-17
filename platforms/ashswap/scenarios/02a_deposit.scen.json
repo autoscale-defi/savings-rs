@@ -1,0 +1,78 @@
+{
+    "name": "platform",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "01a_configure_pools.scen.json"
+        },
+        {
+            "step": "scCall",
+            "txId": "controller deposits USDC",
+            "tx": {
+                "from": "address:controller_contract",
+                "to": "sc:saving",
+                "function": "deposit",
+                "arguments": [],
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:USDC-abcdef",
+                        "value": "1,000,000"
+                    }
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/platform.wasm",
+                    "esdt": {
+                        "str:USDCTBFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "133200"
+                                }
+                            ]
+                        },
+                        "str:BUSDEGLDFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "136396357724572723"
+                                }
+                            ]
+                        }
+                    },
+                    "storage": {
+                        "str:deposited_assets": "1,000,000",
+                        "str:current_position_for_farm|sc:ashswap_busd_egld_farm": {
+                            "00-token_identifier": "nested:str:BUSDEGLDFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:136396357724572723"
+                        },
+                        "str:current_position_for_farm|sc:ashswap_usdc_t_b_farm": {
+                            "00-token_identifier": "nested:str:USDCTBFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:133200"
+                        },
+                        "+": "*"
+                    }
+                },
+                "+": "*"
+            }
+        }
+
+    ]
+}

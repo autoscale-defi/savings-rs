@@ -1,0 +1,126 @@
+{
+    "name": "platform",
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "02a_deposit.scen.json"
+        },
+        {
+            "step": "scCall",
+            "txId": "controller withdraws 50%",
+            "tx": {
+                "from": "address:controller_contract",
+                "to": "sc:saving",
+                "function": "withdraw",
+                "arguments": [
+                    "500,000"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "address:controller_contract": {
+                    "balance": "*",
+                    "nonce": "*",
+                    "esdt": {
+                        "str:USDC-abcdef": "999,497,279"
+                    }
+                },
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/platform.wasm",
+                    "esdt": {
+                        "str:USDCTBFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "66600"
+                                }
+                            ]
+                        },
+                        "str:BUSDEGLDFA-abcdef": {
+                            "instances": [
+                                {
+                                    "nonce": "1",
+                                    "balance": "68198178862286362"
+                                }
+                            ]
+                        }
+                    },
+                    "storage": {
+                        "str:deposited_assets": "500,000",
+                        "str:current_position_for_farm|sc:ashswap_busd_egld_farm": {
+                            "00-token_identifier": "nested:str:BUSDEGLDFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:68198178862286362"
+                        },
+                        "str:current_position_for_farm|sc:ashswap_usdc_t_b_farm": {
+                            "00-token_identifier": "nested:str:USDCTBFA-abcdef",
+                            "01-nonce": "u64:1",
+                            "02-amount": "biguint:66600"
+                        },
+                        "+": "*"
+                    }
+                },
+                "+": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "controller withdraws 50% a second time",
+            "tx": {
+                "from": "address:controller_contract",
+                "to": "sc:saving",
+                "function": "withdraw",
+                "arguments": [
+                    "500,000"
+                ],
+                "gasLimit": "300,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": "*",
+                "status": "0",
+                "message": "",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "address:controller_contract": {
+                    "balance": "*",
+                    "nonce": "*",
+                    "esdt": {
+                        "str:USDC-abcdef": "999,994,558"
+                    }
+                },
+                "sc:saving": {
+                    "owner": "address:saving_owner",
+                    "nonce": "0",
+                    "code": "file:../output/platform.wasm",
+                    "esdt": {},
+                    "storage": {
+                        "str:deposited_assets": "0",
+                        "str:current_position_for_farm|sc:ashswap_busd_egld_farm": "",
+                        "str:current_position_for_farm|sc:ashswap_usdc_t_b_farm": "",
+                        "+": "*"
+                    }
+                },
+                "+": "*"
+            }
+        }
+    ]
+}

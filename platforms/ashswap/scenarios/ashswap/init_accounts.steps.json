@@ -1,0 +1,96 @@
+{
+    "name": "init accounts",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:ashswap_owner": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    }
+                },
+                "address:ashswap_user1": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "1,000,000,000,000,000,000,000,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    }
+                },
+                "address:ashswap_user2": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    }
+                },
+                "address:user_with_lp": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:LPTOK-abcdef": "5,000,000,000"
+                    }
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "address:ashswap_owner": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    },
+                    "storage": {
+                        "+": ""
+                    }
+                },
+                "address:ashswap_user1": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "1,000,000,000,000,000,000,000,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    },
+                    "storage": {
+                        "+": ""
+                    }
+                },
+                "address:ashswap_user2": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:USDT-abcdef": "5,000,000,000",
+                        "str:ASH-abcdef": "5,000,000,000",
+                        "str:USDC-abcdef": "5,000,000,000"
+                    },
+                    "storage": {
+                        "+": ""
+                    }
+                },
+                "address:user_with_lp": {
+                    "nonce": "0",
+                    "balance": "1,000,000,000,000,000,000,000,000,000,000",
+                    "esdt": {
+                        "str:LPTOK-abcdef": "5,000,000,000"
+                    },
+                    "storage": {
+                        "+": ""
+                    }
+                },
+                "+": "*"
+            }
+        }
+    ]
+}

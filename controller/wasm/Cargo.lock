@@ -38,6 +38,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "controller"
+version = "0.0.0"
+dependencies = [
+ "multiversx-sc",
+ "multiversx-sc-modules",
+ "platform",
+ "vault",
+]
+
+[[package]]
+name = "controller-wasm"
+version = "0.0.0"
+dependencies = [
+ "controller",
+ "multiversx-sc-wasm-adapter",
+]
+
+[[package]]
 name = "endian-type"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -114,6 +132,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "multiversx-sc-modules"
+version = "0.43.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75dc2548fe5072cad37b5c816d2344d7cd12e8cafb1a0ff8bbf2bc1829054710"
+dependencies = [
+ "multiversx-sc",
+]
+
+[[package]]
 name = "multiversx-sc-wasm-adapter"
 version = "0.43.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -151,14 +178,6 @@ name = "platform"
 version = "0.0.0"
 dependencies = [
  "multiversx-sc",
-]
-
-[[package]]
-name = "platform-wasm"
-version = "0.0.0"
-dependencies = [
- "multiversx-sc-wasm-adapter",
- "platform",
 ]
 
 [[package]]
@@ -211,6 +230,13 @@ name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
+
+[[package]]
+name = "vault"
+version = "0.0.0"
+dependencies = [
+ "multiversx-sc",
+]
 
 [[package]]
 name = "version_check"

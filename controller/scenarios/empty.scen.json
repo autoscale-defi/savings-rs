@@ -1,5 +1,5 @@
 {
-    "name": "saving-rs",
+    "name": "controller",
     "steps": [
         {
             "step": "setState",
@@ -22,7 +22,7 @@
             "id": "deploy",
             "tx": {
                 "from": "address:owner",
-                "contractCode": "file:../output/saving-rs.wasm",
+                "contractCode": "file:../output/controller.wasm",
                 "arguments": [],
                 "gasLimit": "5,000,000",
                 "gasPrice": "0"

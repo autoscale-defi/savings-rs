@@ -4,7 +4,7 @@ fn world() -> ScenarioWorld {
     let mut blockchain = ScenarioWorld::new();
     blockchain.set_current_dir_from_workspace("contracts/examples/empty");
 
-    blockchain.register_contract("file:output/saving-rs.wasm", saving_rs::ContractBuilder);
+    blockchain.register_contract("file:output/controller.wasm", controller::ContractBuilder);
     blockchain
 }
 

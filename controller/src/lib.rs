@@ -28,12 +28,14 @@ pub trait ControllerContract:
         phase: Phase,
         min_unbond_epochs: u64,
         deposit_fees: u64,
+        performance_fees: u64,
         withdraw_fees_perc: u64,
     ) {
         self.usdc_token().set_if_empty(usdc_token_id);
         self.phase().set_if_empty(phase.clone());
         self.min_unbond_epochs().set(min_unbond_epochs);
         self.deposit_fees_percentage(phase).set(&deposit_fees);
+        self.performance_fees().set(&performance_fees);
         self.force_withdraw_fees_percentage()
             .set(&withdraw_fees_perc);
     }
@@ -223,10 +225,13 @@ pub trait ControllerContract:
                     );
                 }
             }
-            // send rewards to vault  (TAKE A PERCENTAGE FOR US AND THEN SEND TO VAULT)
-            // let perfomances_fees = something
-            // take the fees
-            // send the remaining in rewards
+
+            let performance_fees = self.performance_fees().get();
+            let fees_amount =
+                rewards_payment.amount.clone() * performance_fees / PERCENTAGE_DIVIDER;
+            self.send_fees(&fees_amount);
+
+            rewards_payment.amount -= performance_fees;
             self.increase_reserve(rewards_payment);
         }
     }

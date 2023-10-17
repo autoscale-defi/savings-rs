@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           34
+// Endpoints:                           35
 // Async Callback:                       1
-// Total number of exported functions:  36
+// Total number of exported functions:  37
 
 #![no_std]
 
@@ -50,6 +50,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         setFeesAddress => set_fees_address
         setPhase => set_phase
         setDepositFees => set_deposit_fees
+        setPerformanceFees => set_performance_fees
         getPhase => get_phase
         getPlaforms => platforms
         getPlatformsTotalWeight => platforms_total_weight

@@ -92,6 +92,12 @@ pub trait ConfigModule {
         self.deposit_fees_percentage(phase).set(fees_perc);
     }
 
+    #[only_owner]
+    #[endpoint(setPerformanceFees)]
+    fn set_performance_fees(&self, fees_perc: u64) {
+        self.performance_fees().set(&fees_perc);
+    }
+
     /// Will maybe be calculated dynamically in the future.
     #[view(getPhase)]
     fn get_phase(&self) -> Phase {
@@ -124,6 +130,9 @@ pub trait ConfigModule {
 
     #[storage_mapper("feesAddress")]
     fn fees_address(&self) -> SingleValueMapper<ManagedAddress>;
+
+    #[storage_mapper("performanceFees")]
+    fn performance_fees(&self) -> SingleValueMapper<u64>;
 
     #[storage_mapper("usdcTokenId")]
     fn usdc_token(&self) -> FungibleTokenMapper<Self::Api>;

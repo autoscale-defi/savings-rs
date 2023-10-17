@@ -14,4 +14,6 @@ Cargo.lock
 # VSCode specific files
 .vscode/*
 
-swallet.pem
+*.pem
+.DS_Store
+*.interaction.json

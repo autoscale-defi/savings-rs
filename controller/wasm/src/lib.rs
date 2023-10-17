@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           31
+// Endpoints:                           34
 // Async Callback:                       1
-// Total number of exported functions:  33
+// Total number of exported functions:  36
 
 #![no_std]
 
@@ -29,13 +29,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         claimControllerRewards => claim_controller_rewards
         manageLiquidity => manage_liquidity
         getTotalDeposited => get_total_deposited
-        addPlatforms => add_platforms
-        removePlatforms => remove_platforms
-        setMinUnbondEpochs => set_min_unbond_epochs
         getControllerParameters => get_controller_parameters
-        getPlaforms => platforms
-        getPlatformsTotalWeight => platforms_total_weight
-        getForceWithdrawFeesPercentage => force_withdraw_fees_percentage
         registerSavingsToken => register_savings_token
         registerUnbondToken => register_unbond_token
         getSavingsTokenId => savings_token
@@ -43,16 +37,25 @@ multiversx_sc_wasm_adapter::endpoints! {
         calculateRewardsForGivenPosition => calculate_rewards
         setRewardsPerSharePerBlock => set_rewards_per_share_per_block
         setProduceRewardsEnabled => set_produce_rewards_enabled
+        getRewardsPerSharePerBlock => rewards_per_share_per_block
         isProduceRewardsEnabled => produce_rewards_enabled
         getLastUpdateBlockNonce => last_update_block_nonce
         getRewardsPerShare => rewards_per_share
-        getRewardsPerSharePerBlock => rewards_per_share_per_block
-        getPhase => get_phase
+        addPlatforms => add_platforms
+        removePlatforms => remove_platforms
+        setLiquidityBuffer => set_liquidity_buffer
+        setForceWithdrawFeesPercentage => set_force_withdraw_fees_percentage
+        setVaultAddress => set_vault_address
+        setMinUnbondEpochs => set_min_unbond_epochs
+        setFeesAddress => set_fees_address
         setPhase => set_phase
         setDepositFees => set_deposit_fees
-        getDepositFees => deposit_fees_percentage
-        setVaultAddress => set_vault_address
+        getPhase => get_phase
+        getPlaforms => platforms
+        getPlatformsTotalWeight => platforms_total_weight
+        getForceWithdrawFeesPercentage => force_withdraw_fees_percentage
         getVaultAddress => vault_addr
+        getDepositFees => deposit_fees_percentage
     )
 }
 

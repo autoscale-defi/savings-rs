@@ -1,8 +1,10 @@
 #![no_std]
 multiversx_sc::imports!();
 
-use models::{ControllerParametersDTO, Phase};
-use models::{SavingsTokenAttributes, UnbondTokenAttributes};
+use models::{
+    ClaimRewardsResultType, ControllerParametersDTO, Phase, SavingsTokenAttributes,
+    UnbondTokenAttributes, WithdrawResultType,
+};
 use multiversx_sc_modules::default_issue_callbacks;
 
 pub mod config;
@@ -73,7 +75,7 @@ pub trait ControllerContract:
 
     #[payable("*")]
     #[endpoint]
-    fn withdraw(&self, opt_force_withdraw: OptionalValue<bool>) -> ManagedVec<EsdtTokenPayment> {
+    fn withdraw(&self, opt_force_withdraw: OptionalValue<bool>) -> WithdrawResultType<Self::Api> {
         let payments = self.call_value().all_esdt_transfers();
         self.savings_token().require_all_same_token(&payments);
 
@@ -85,20 +87,14 @@ pub trait ControllerContract:
 
         let force_withdraw = opt_force_withdraw.into_option().unwrap_or(false);
 
-        let mut output_payments = ManagedVec::new();
-
-        if force_withdraw {
+        let output_payment = if force_withdraw {
             let fees_percentage = self.force_withdraw_fees_percentage().get();
             let fees_amount = rewards.total_shares.clone() * fees_percentage / PERCENTAGE_DIVIDER;
-            let savings_token_without_fees = &rewards.total_shares - &fees_amount;
+            let net_amount = &rewards.total_shares - &fees_amount;
 
             self.send_fees(&fees_amount);
 
-            output_payments.push(EsdtTokenPayment::new(
-                self.usdc_token().get_token_id(),
-                0,
-                savings_token_without_fees,
-            ));
+            EsdtTokenPayment::new(self.usdc_token().get_token_id(), 0, net_amount)
         } else {
             let unbond_token_attr = UnbondTokenAttributes {
                 unlock_epoch: current_epoch + min_unbond_epochs,
@@ -107,25 +103,24 @@ pub trait ControllerContract:
                 .unbond_token()
                 .nft_create(rewards.total_shares.clone(), &unbond_token_attr);
 
-            output_payments.push(unbond_token_payment);
-
             self.liquidity_needed_for_epoch(unbond_token_attr.unlock_epoch)
                 .update(|x| *x += rewards.total_shares.clone());
-        }
+
+            unbond_token_payment
+        };
 
         // user wants to withdraw so even if the real amount is 0 (rounded), the tx goes through and positions are closed
-        self.send_rewards(
+        let rewards_payment = self.send_rewards(
             self.blockchain().get_caller(),
             self.get_real_usdc_rewards_amount(&rewards.accumulated_rewards),
         );
         self.burn_savings_tokens(&payments);
 
         let caller = self.blockchain().get_caller();
-        self.send().direct_multi(&caller, &output_payments);
+        self.send()
+            .direct_non_zero_esdt_payment(&caller, &output_payment);
 
-        // Rewards are not in the output_payments, maybe we should return it from the vault endpoint first?
-        // Rewards should be in output_payments
-        output_payments
+        (output_payment, rewards_payment).into()
     }
 
     #[payable("*")]
@@ -167,7 +162,7 @@ pub trait ControllerContract:
 
     #[payable("*")]
     #[endpoint(claimRewards)]
-    fn claim_rewards(&self) {
+    fn claim_rewards(&self) -> ClaimRewardsResultType<Self::Api> {
         let payments = self.call_value().all_esdt_transfers();
         self.savings_token().require_all_same_token(&payments);
 
@@ -191,11 +186,11 @@ pub trait ControllerContract:
 
         let caller = self.blockchain().get_caller();
 
-        self.send_rewards(caller.clone(), real_usdc_rewards_amount);
+        let rewards_payment = self.send_rewards(caller.clone(), real_usdc_rewards_amount);
         self.send()
             .direct_non_zero_esdt_payment(&caller, &new_savings_token);
 
-        // should return output payments? but same as withdraw, should we first return the payment rewards from the vault? YES
+        (new_savings_token, rewards_payment).into()
     }
 
     #[endpoint(claimControllerRewards)]
@@ -206,7 +201,6 @@ pub trait ControllerContract:
             let sc_address = platform.sc_address; // will be used to call the platform sc
             let fees_address = self.fees_address().get();
 
-            // claimRewards (call platform SC)
             let claim_rewards_payments = self.claim_rewards_for_platform(sc_address);
             let usdc_token_id = self.usdc_token().get_token_id();
 
@@ -271,7 +265,7 @@ pub trait ControllerContract:
     // I think it would be important to do it for at least current_epoch + 2 or 3
     // Otherwise, I think we'll need to withdraw a lot of funds from the investments contracts.
     fn update_min_liq_reserve_needed(&self) {
-        let current_epoch = self.blockchain().get_block_epoch();
+        let current_epoch: u64 = self.blockchain().get_block_epoch();
         let last_update = self.last_update_for_min_liq_reserve_needed().get();
         let epoch_diff = current_epoch - last_update;
 
@@ -400,6 +394,7 @@ pub trait ControllerContract:
     #[storage_mapper("liquidityNeededForEpoch")]
     fn liquidity_needed_for_epoch(&self, epoch: u64) -> SingleValueMapper<BigUint>;
 
+    #[view(getMinLiquidityReserveNeeded)]
     #[storage_mapper("minLiquidityReserveNeeded")]
     fn min_liquidity_reserve_needed(&self) -> SingleValueMapper<BigUint>;
 

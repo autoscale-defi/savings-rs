@@ -37,3 +37,9 @@ pub enum Phase {
     Accumulation,
     Depletion,
 }
+
+pub type ClaimRewardsResultType<BigUint> =
+    MultiValue2<EsdtTokenPayment<BigUint>, EsdtTokenPayment<BigUint>>;
+
+pub type WithdrawResultType<BigUint> =
+    MultiValue2<EsdtTokenPayment<BigUint>, EsdtTokenPayment<BigUint>>;

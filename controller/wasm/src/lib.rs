@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           35
+// Endpoints:                           36
 // Async Callback:                       1
-// Total number of exported functions:  37
+// Total number of exported functions:  38
 
 #![no_std]
 
@@ -30,6 +30,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         manageLiquidity => manage_liquidity
         getTotalDeposited => get_total_deposited
         getControllerParameters => get_controller_parameters
+        getMinLiquidityReserveNeeded => min_liquidity_reserve_needed
         registerSavingsToken => register_savings_token
         registerUnbondToken => register_unbond_token
         getSavingsTokenId => savings_token

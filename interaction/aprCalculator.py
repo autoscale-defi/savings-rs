@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     if choice == "1":
         apr_value = float(Prompt.ask("Enter the APR (e.g., for 3%, input 0.03)"))
-        print(f"rewardsPerSharePerBlock: [bold yellow]{apr_to_rewards_per_block(apr_value):.15f}[/bold yellow]")
+        print(f"rewardsPerSharePerBlock: [bold yellow]{apr_to_rewards_per_block(apr_value):.12f}[/bold yellow]")
 
     elif choice == "2":
         rewards_value = float(Prompt.ask("Enter the rewardsPerSharePerBlock"))

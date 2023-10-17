@@ -5,13 +5,15 @@ OWNER="swallet.pem"
 CONTROLLER="controller/output/controller.wasm"
 VAULT="vault/output/vault.wasm"
 
-CONTROLLER_ADDR="erd1qqqqqqqqqqqqqpgqfj8jxtk8crkjq0whsyfl58pkpa8vljsxehjq2p8ems"
-VAULT_ADDR="erd1qqqqqqqqqqqqqpgqyyvtfscnszfpm3gs0e6jgr8vcj8jcym4ehjq2fz4xc"
+CONTROLLER_ADDR="erd1qqqqqqqqqqqqqpgqzzlkdyqvgkvwmapyupauckfmy6krwh4ef53sf50atn"
+VAULT_ADDR="erd1qqqqqqqqqqqqqpgqufehmuwph0247z2t8l2u9h4zndna8ke8f53spznyz5"
 
 USDC_TOKEN_ID="str:USDC-8d4068"
 PHASE=0
 MIN_UNBOND_EPOCHS=7
-WITHDRAW_FEES_PERC=10
+DEPOSIT_FEES_CURRENT_PHASE=100
+PERFORMANCE_FEES=250
+FORCE_WITHDRAW_FEES=750
 
 deployController() {
   mxpy --verbose contract deploy --bytecode="$CONTROLLER" --recall-nonce \
@@ -19,7 +21,7 @@ deployController() {
         --gas-limit=599000000 \
         --proxy=$PROXY --chain=$CHAIN \
         --metadata-payable-by-sc \
-        --arguments $USDC_TOKEN_ID $PHASE $MIN_UNBOND_EPOCHS $WITHDRAW_FEES_PERC \
+        --arguments $USDC_TOKEN_ID $PHASE $MIN_UNBOND_EPOCHS $DEPOSIT_FEES_CURRENT_PHASE $PERFORMANCE_FEES $FORCE_WITHDRAW_FEES \
         --outfile="deploy-devnet.interaction.json" --send || return
 }
 
@@ -29,7 +31,7 @@ deployVault() {
         --gas-limit=599000000 \
         --proxy=$PROXY --chain=$CHAIN \
         --metadata-payable-by-sc \
-        --arguments $USDC_TOKEN_ID $MY_ADDR \
+        --arguments $USDC_TOKEN_ID $CONTROLLER_ADDR \
         --outfile="deploy-devnet.interaction.json" --send || return
 }
 
@@ -39,7 +41,7 @@ upgradeController() {
     --gas-limit=599000000 \
     --proxy=${PROXY} --chain=${CHAIN} \
     --metadata-payable-by-sc \
-    --arguments $USDC_TOKEN_ID $PHASE $MIN_UNBOND_EPOCHS $WITHDRAW_FEES_PERC \
+    --arguments $USDC_TOKEN_ID $PHASE $MIN_UNBOND_EPOCHS $DEPOSIT_FEES_CURRENT_PHASE $PERFORMANCE_FEES $FORCE_WITHDRAW_FEES \
     --send --outfile="deploy-devnet.interaction.json" || return
 
     echo "Smart contract upgraded address: ${ADDRESS}"
@@ -87,21 +89,8 @@ registerUnbondToken() {
           --send || return
 }
 
-setDepositFeesInAccPhase() {
-    phase=0
-    fees_perc=1
-
-    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
-          --pem=${OWNER} \
-          --proxy=${PROXY} --chain=${CHAIN} \
-          --gas-limit=100000000 \
-          --function="setDepositFees" \
-          --arguments $phase $fees_perc \
-          --send || return
-}
-
 setRewardsPerSharePerBlock() {
-    new_rewards_per_share_per_bloc=10
+    new_rewards_per_share_per_bloc=7610
 
     mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
           --pem=${OWNER} \
@@ -131,6 +120,36 @@ setVaultAddress() {
           --gas-limit=100000000 \
           --function="setVaultAddress" \
           --arguments $VAULT_ADDR \
+          --send || return 
+}
+
+addPlatforms() {
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
+          --pem=${OWNER} \
+          --proxy=${PROXY} --chain=${CHAIN} \
+          --gas-limit=100000000 \
+          --function="addPlatforms" \
+          --arguments "str:ashswap" erd1qqqqqqqqqqqqqpgqjwu8h7e2hvegj8sy9pxrl8rtvejlw7n9q33sg0t6gl 100 \
+          --send || return 
+}
+
+setLiquidityBuffer() {
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
+          --pem=${OWNER} \
+          --proxy=${PROXY} --chain=${CHAIN} \
+          --gas-limit=100000000 \
+          --function="setLiquidityBuffer" \
+          --arguments 100000000 \
+          --send || return 
+}
+
+setFeesAddress() {
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
+          --pem=${OWNER} \
+          --proxy=${PROXY} --chain=${CHAIN} \
+          --gas-limit=100000000 \
+          --function="setFeesAddress" \
+          --arguments erd1nnvazpzhan2a54xmmfrpdm6ltau0re333jfj9hhuu77kp0qnf53s9ayhdw \
           --send || return 
 }
 

@@ -57,7 +57,7 @@ pub trait ConfigModule {
     #[endpoint(setForceWithdrawFeesPercentage)]
     fn set_force_withdraw_fees_percentage(&self, withdraw_fees_perc: u64) {
         self.force_withdraw_fees_percentage()
-            .set(&withdraw_fees_perc);
+            .set(withdraw_fees_perc);
     }
 
     #[only_owner]
@@ -96,7 +96,7 @@ pub trait ConfigModule {
     #[only_owner]
     #[endpoint(setPerformanceFees)]
     fn set_performance_fees(&self, fees_perc: u64) {
-        self.performance_fees().set(&fees_perc);
+        self.performance_fees().set(fees_perc);
     }
 
     /// Will maybe be calculated dynamically in the future.

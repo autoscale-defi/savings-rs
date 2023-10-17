@@ -36,10 +36,10 @@ pub trait ControllerContract:
         self.usdc_token().set_if_empty(usdc_token_id);
         self.phase().set_if_empty(phase.clone());
         self.min_unbond_epochs().set(min_unbond_epochs);
-        self.deposit_fees_percentage(phase).set(&deposit_fees);
-        self.performance_fees().set(&performance_fees);
+        self.deposit_fees_percentage(phase).set(deposit_fees);
+        self.performance_fees().set(performance_fees);
         self.force_withdraw_fees_percentage()
-            .set(&withdraw_fees_perc);
+            .set(withdraw_fees_perc);
     }
 
     /// User deposits USDC and receives savings tokens
@@ -284,7 +284,7 @@ pub trait ControllerContract:
         self.min_liquidity_reserve_needed()
             .update(|x| *x += liquidity);
         self.last_update_for_min_liq_reserve_needed()
-            .set(&current_epoch);
+            .set(current_epoch);
     }
 
     /// This function is called onyl from manage_liquidity endpoint

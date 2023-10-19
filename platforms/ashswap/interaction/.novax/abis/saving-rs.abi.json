@@ -1,0 +1,369 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.72.0-nightly",
+            "commitHash": "36fb58e433c782e27dd41034284e157cf86d587f",
+            "commitDate": "2023-06-26",
+            "channel": "Nightly",
+            "short": "rustc 1.72.0-nightly (36fb58e43 2023-06-26)"
+        },
+        "contractCrate": {
+            "name": "saving-rs",
+            "version": "0.0.0"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.43.4"
+        }
+    },
+    "name": "AshSwapPlatformContract",
+    "constructor": {
+        "inputs": [
+            {
+                "name": "controller_address",
+                "type": "Address"
+            },
+            {
+                "name": "holder_address",
+                "type": "Address"
+            },
+            {
+                "name": "zap_address",
+                "type": "Address"
+            },
+            {
+                "name": "asset_token_identifier",
+                "type": "TokenIdentifier"
+            }
+        ],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "deposit",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "withdraw",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "claimRewards",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "getControllerAddress",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "Address"
+                }
+            ]
+        },
+        {
+            "name": "getHolderAddress",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "Address"
+                }
+            ]
+        },
+        {
+            "name": "getAssetTokenIdentifier",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "This storage is used as a cache to avoid useless contract call to the pool.",
+                "Will be populate and clear when pools are added by admins."
+            ],
+            "name": "getShareTokenIdentifierForPool",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "farm_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "This storage is used as a cache to avoid useless contract call to the farm.",
+                "Will be populate and clear when pools are added by admins."
+            ],
+            "name": "getShareTokenIdentifierForFarm",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "farm_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "name": "getCurrentPositionForFarm",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "farm_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "EsdtTokenPayment"
+                }
+            ]
+        },
+        {
+            "name": "getPools",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<multi<Address,PoolInfos>>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getPoolsTotalWeight",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getZapAddress",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "Address"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Gives more flexibility to guide the zap to find a valid route for USDC -> token_id.",
+                "Default value is provided in the [`get_zap_in_start_exchange_for_lp_token_or_default`] function."
+            ],
+            "name": "getZapStartExchangeForToken",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "ZapExchangeInfos"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "This storage is used as a cache to avoid to handle rewards in the deposit endpoint.",
+                "Doing so would lead to a potential out of gas.",
+                "In the claim_rewards endpoint, we should append those waiting rewards to the final result."
+            ],
+            "name": "getWaitingRewards",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<EsdtTokenPayment>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "docs": [
+                "TEMP: This storage mapper is only useful to do a quick PoC for the hackathon.",
+                "It doesn't represent an exact value of assets held by this contracts.",
+                "The actual asset amount can vary for a lot of reasons: slippage, fees, hacks of third-party contracts, etc...",
+                "After the hackathon, it'll be replaced by a real computation, using AshSwap/Autoscale contracts' views."
+            ],
+            "name": "getDepositedAssets",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "addPool",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "pool_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "farm_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "weight",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setSwappableToken",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "is_swappable",
+                    "type": "bool"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "removePool",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "setZapStartExchangeForToken",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "exchange",
+                    "type": "ZapExchange"
+                },
+                {
+                    "name": "override_entry_token",
+                    "type": "Option<TokenIdentifier>"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "events": [],
+    "hasCallback": false,
+    "types": {
+        "EsdtTokenPayment": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token_nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "PoolInfos": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "pool_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "farm_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "weight",
+                    "type": "u64"
+                }
+            ]
+        },
+        "ZapExchange": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "XExchange",
+                    "discriminant": 0
+                },
+                {
+                    "name": "AshSwap",
+                    "discriminant": 1
+                }
+            ]
+        },
+        "ZapExchangeInfos": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "exchange",
+                    "type": "ZapExchange"
+                },
+                {
+                    "name": "override_entry_token",
+                    "type": "Option<TokenIdentifier>"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "deploy contract",
+  "steps": [
+    {
+      "step": "setState",
+      "accounts": {
+        "address:vault_owner": {
+          "nonce": "0",
+          "balance": "1,000,000,000"
+        }
+      },
+      "newAddresses": [
+        {
+          "creatorAddress": "address:vault_owner",
+          "creatorNonce": "0",
+          "newAddress": "sc:vault"
+        }
+      ]
+    },
+    {
+      "step": "scDeploy",
+      "txId": "deploy vault",
+      "tx": {
+        "from": "address:vault_owner",
+        "contractCode": "file:../../../vault/output/vault.wasm",
+        "arguments": ["str:USDC-123456", "sc:controller"],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": [],
+        "status": "",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "checkState",
+      "accounts": {
+        "sc:vault": {
+          "owner": "address:vault_owner",
+          "nonce": "0",
+          "balance": "0",
+          "storage": {
+            "str:usdcTokenId": "str:USDC-123456",
+            "str:controllerAddr": "sc:controller"
+          },
+          "code": "file:../../../vault/output/vault.wasm"
+        },
+        "+": "*"
+      }
+    },
+    {
+      "step": "setState",
+      "accounts": {
+        "sc:vault": {
+          "owner": "address:vault_owner",
+          "nonce": "0",
+          "balance": "0",
+          "storage": {
+            "str:usdcTokenId": "str:USDC-123456",
+            "str:controllerAddr": "sc:controller",
+            "str:rewardsReserve": "1,000,000,000"
+          },
+          "esdt": {
+            "str:USDC-123456": "1,000,000,000"
+          },
+          "code": "file:../../../vault/output/vault.wasm"
+        }
+      }
+    }
+  ]
+}

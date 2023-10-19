@@ -1,0 +1,61 @@
+{
+  "name": "withdraw",
+  "steps": [
+    {
+      "step": "externalSteps",
+      "path": "02_claim_rewards.scen.json"
+    },
+    {
+      "step": "scCall",
+      "txId": "user2 withdraw",
+      "tx": {
+        "from": "address:user2",
+        "to": "sc:controller",
+        "function": "withdraw",
+        "arguments": [],
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:SAVINGS-123456",
+            "nonce": "2",
+            "value": "1,980,000"
+          }
+        ],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*",
+        "logs": [
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTCreate",
+            "topics": [
+              "str:UNBOND-123456",
+              "1",
+              "1,980,000",
+              "0x08011204001e3660"
+            ]
+          },
+          {
+            "address": "sc:vault",
+            "endpoint": "str:ESDTTransfer",
+            "topics": ["str:USDC-123456", "0", "218", "address:user2"]
+          },
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTBurn",
+            "topics": ["str:SAVINGS-123456", "2", "1,980,000"]
+          },
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTTransfer",
+            "topics": ["str:UNBOND-123456", "1", "1,980,000", "address:user2"]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -139,6 +139,8 @@ pub trait ControllerContract:
             .require_same_token(&payment.token_identifier);
         require!(payment.amount > 0, "Payment amount cannot be zero");
 
+        self.update_min_liq_reserve_needed();
+
         let unbond_token_attr: UnbondTokenAttributes = self
             .unbond_token()
             .get_token_attributes(payment.token_nonce);

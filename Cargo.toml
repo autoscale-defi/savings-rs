@@ -7,3 +7,7 @@ members = [
     "vault",
     "vault/meta"
 ]
+
+exclude = [
+    "platforms/ashswap/interaction"
+]

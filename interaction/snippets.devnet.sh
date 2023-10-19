@@ -153,6 +153,16 @@ setFeesAddress() {
           --send || return 
 }
 
+setDepositFees() {
+    mxpy --verbose contract call ${CONTROLLER_ADDR} --recall-nonce \
+          --pem=${OWNER} \
+          --proxy=${PROXY} --chain=${CHAIN} \
+          --gas-limit=100000000 \
+          --function="setDepositFees" \
+          --arguments 0 0 \
+          --send || return 
+}
+
 getRewardsPerShare() {
     mxpy --verbose contract query ${CONTROLLER_ADDR} --function="getRewardsPerShare" --proxy=${PROXY} 
 }

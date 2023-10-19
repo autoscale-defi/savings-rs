@@ -25,6 +25,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         deposit => deposit
         withdraw => withdraw
         claimRewards => claim_rewards_endpoint
+        getDepositedAssets => get_deposited_assets
         getControllerAddress => controller_address
         getHolderAddress => holder_address
         getAssetTokenIdentifier => asset_token_identifier
@@ -36,7 +37,6 @@ multiversx_sc_wasm_adapter::endpoints! {
         getZapAddress => zap_address
         getZapStartExchangeForToken => zap_start_exchange_for_token
         getWaitingRewards => waiting_rewards
-        getDepositedAssets => deposited_assets
         addPool => add_pool
         setSwappableToken => set_swappable_token
         removePool => remove_pool

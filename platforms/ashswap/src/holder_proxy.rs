@@ -121,6 +121,21 @@ pub trait HolderProxyModule: ContractBase
         }
     }
 
+    /// Separates a specific payment from an array of payments based on the provided token identifier.
+    ///
+    /// This function scans through the provided payments, identifying and isolating the payment with
+    /// the specified token identifier. If the desired payment isn't present or if there are multiple
+    /// instances of it, the function reverts the transaction.
+    ///
+    /// # Parameters
+    /// - `payments`: A collection of `EsdtTokenPayment` objects from which the specific payment needs to be extracted.
+    /// - `specific_token_identifier`: The unique token identifier of the payment to be separated from the others.
+    ///
+    /// # Returns
+    /// A tuple containing:
+    /// 1. The `EsdtTokenPayment` object corresponding to the specified token identifier.
+    /// 2. A `ManagedVec` of `EsdtTokenPayment` objects representing all other payments.
+    ///
     fn separate_specific_payment_from_another_ones(
         &self,
         payments: &ManagedVec<Self::Api, EsdtTokenPayment<Self::Api>>,

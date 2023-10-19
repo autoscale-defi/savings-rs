@@ -1,0 +1,149 @@
+{
+  "name": "deposit",
+  "steps": [
+    {
+      "step": "externalSteps",
+      "path": "00_init.scen.json"
+    },
+    {
+      "step": "setState",
+      "currentBlockInfo": {
+        "blockNonce": "200",
+        "blockEpoch": "15"
+      }
+    },
+    {
+      "step": "scCall",
+      "txId": "user1 deposit",
+      "tx": {
+        "from": "address:user1",
+        "to": "sc:controller",
+        "function": "deposit",
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:USDC-123456",
+            "nonce": "0",
+            "value": "1,000,000"
+          }
+        ],
+        "arguments": [],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "scCall",
+      "txId": "user2 deposit",
+      "tx": {
+        "from": "address:user2",
+        "to": "sc:controller",
+        "function": "deposit",
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:USDC-123456",
+            "nonce": "0",
+            "value": "2,000,000"
+          }
+        ],
+        "arguments": [],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "scCall",
+      "txId": "user3 deposit",
+      "tx": {
+        "from": "address:user3",
+        "to": "sc:controller",
+        "function": "deposit",
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:USDC-123456",
+            "nonce": "0",
+            "value": "1,500,000"
+          }
+        ],
+        "arguments": [],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "checkState",
+      "accounts": {
+        "address:user1": {
+          "nonce": "*",
+          "balance": "0",
+          "esdt": {
+            "str:USDC-123456": "99,000,000",
+            "str:SAVINGS-123456": {
+              "instances": [
+                {
+                  "nonce": "1",
+                  "balance": "990,000"
+                }
+              ]
+            }
+          }
+        },
+        "address:user2": {
+          "nonce": "*",
+          "balance": "0",
+          "esdt": {
+            "str:USDC-123456": "98,000,000",
+            "str:SAVINGS-123456": {
+              "instances": [
+                {
+                  "nonce": "2",
+                  "balance": "1,980,000"
+                }
+              ]
+            }
+          }
+        },
+        "address:user3": {
+          "nonce": "*",
+          "balance": "0",
+          "esdt": {
+            "str:USDC-123456": "98,500,000",
+            "str:SAVINGS-123456": {
+              "instances": [
+                {
+                  "nonce": "3",
+                  "balance": "1,485,000"
+                }
+              ]
+            }
+          }
+        },
+        "address:fees": {
+          "nonce": "*",
+          "balance": "0",
+          "esdt": {
+            "str:USDC-123456": "45,000"
+          }
+        },
+        "+": "*"
+      }
+    }
+  ]
+}

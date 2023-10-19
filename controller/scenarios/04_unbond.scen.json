@@ -1,0 +1,78 @@
+{
+  "name": "withdraw",
+  "steps": [
+    {
+      "step": "externalSteps",
+      "path": "03_withdraw.scen.json"
+    },
+    {
+      "step": "scCall",
+      "txId": "user2 try unbond before end of lock period",
+      "tx": {
+        "from": "address:user2",
+        "to": "sc:controller",
+        "function": "unbond",
+        "arguments": [],
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:UNBOND-123456",
+            "nonce": "1",
+            "value": "1,980,000"
+          }
+        ],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "4",
+        "message": "str:Cannot unbond before unlock epoch",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "setState",
+      "currentBlockInfo": {
+        "blockEpoch": "27"
+      }
+    },
+    {
+      "step": "scCall",
+      "txId": "user2 unbond",
+      "tx": {
+        "from": "address:user2",
+        "to": "sc:controller",
+        "function": "unbond",
+        "arguments": [],
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:UNBOND-123456",
+            "nonce": "1",
+            "value": "1,980,000"
+          }
+        ],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*",
+        "logs": [
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTBurn",
+            "topics": ["str:UNBOND-123456", "1", "1,980,000"]
+          },
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTTransfer",
+            "topics": ["str:USDC-123456", "0", "1,980,000", "address:user2"]
+          }
+        ]
+      }
+    }
+  ]
+}

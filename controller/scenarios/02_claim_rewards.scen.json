@@ -1,0 +1,68 @@
+{
+  "name": "claim rewards",
+  "steps": [
+    {
+      "step": "externalSteps",
+      "path": "01_deposit.scen.json"
+    },
+    {
+      "step": "setState",
+      "currentBlockInfo": {
+        "blockNonce": "14,600",
+        "blockEpoch": "20"
+      }
+    },
+    {
+      "step": "scCall",
+      "txId": "user1 claim rewards",
+      "tx": {
+        "from": "address:user1",
+        "to": "sc:controller",
+        "function": "claimRewards",
+        "arguments": [],
+        "esdtValue": [
+          {
+            "tokenIdentifier": "str:SAVINGS-123456",
+            "nonce": "1",
+            "value": "990,000"
+          }
+        ],
+        "gasLimit": "100,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "out": "*",
+        "status": "",
+        "gas": "*",
+        "refund": "*",
+        "logs": [
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTCreate",
+            "topics": [
+              "str:SAVINGS-123456",
+              "4",
+              "990,000",
+              "0x08011204000f1b30"
+            ]
+          },
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTBurn",
+            "topics": ["str:SAVINGS-123456", "1", "990,000"]
+          },
+          {
+            "address": "sc:vault",
+            "endpoint": "str:ESDTTransfer",
+            "topics": ["str:USDC-123456", "0", "109", "address:user1"]
+          },
+          {
+            "address": "sc:controller",
+            "endpoint": "str:ESDTNFTTransfer",
+            "topics": ["str:SAVINGS-123456", "4", "990,000", "address:user1"]
+          }
+        ]
+      }
+    }
+  ]
+}
